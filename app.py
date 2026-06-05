@@ -115,10 +115,20 @@ if st.session_state.tela == "entrada":
             "📥 Importação em Lote"
         ])
         
-        # --- ABA 1: CADASTRO MANUAL (AGORA DIVIDIDO EM SUBCOLUNAS LADO A LADO) ---
+        # --- ABA 1: CADASTRO MANUAL ---
         with aba_manual:
             st.markdown('<div class="custom-card">', unsafe_allow_html=True)
             
+            # INICIALIZAÇÃO DE SEGURANÇA (Evita o NameError independente da ordem das colunas)
+            titulo = ""
+            classificacao = ""
+            edicao = "1.ed."
+            exemplar = "Ex.1"
+            val_extra1 = ""
+            val_extra2 = ""
+            paginas = 100
+            dimensao = ""
+
             subcol_dados, subcol_layout = st.columns([1, 1], gap="large")
             
             # Subcoluna Esquerda: Cadastro de Dados Básicos do livro
@@ -135,11 +145,9 @@ if st.session_state.tela == "entrada":
                 edicao = c3.text_input("Edição", value="1.ed.", key="manual_ed")
                 exemplar = c4.text_input("Exemplar", value="Ex.1", key="manual_ex")
                 
-                val_extra1 = ""
                 if st.session_state.cfg_usar_extra1:
                     val_extra1 = st.text_input(f"{st.session_state.cfg_nome_extra1}", key="manual_extra1", placeholder="Ex: C891l")
                     
-                val_extra2 = ""
                 if st.session_state.cfg_usar_extra2:
                     val_extra2 = st.text_input(f"{st.session_state.cfg_nome_extra2}", key="manual_extra2")
             
