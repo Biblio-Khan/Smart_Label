@@ -153,10 +153,10 @@ elif st.session_state.tela == "calibragem":
                 st.subheader("🔍 Visualização 3D da Etiqueta")
                 
                 val_atual = st.session_state.livros[idx]['ajuste']
-                cor_borda = "#EF4444" if val_atual < 5.0 else #22C55E"
+                cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
                 esp_3d = max(val_atual * 6, 60)
                 
-                # Montagem segura do HTML escapando as chaves CSS para evitar quebras de texto
+                # Montagem do HTML corrigida
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
                     <div style="width: {esp_3d}px; height: 280px; background: #A084E8; border: 5px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
