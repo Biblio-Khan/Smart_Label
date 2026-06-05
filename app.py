@@ -97,38 +97,52 @@ elif st.session_state.tela == "calibragem":
     if not st.session_state.livros:
         st.warning("Nenhum livro cadastrado.")
     else:
-        # ESTANTE COESIVA COM AS ETIQUETAS VISÍVEIS NOS LIVROS
-        st.markdown("<div style='display: flex; flex-wrap: wrap; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 50px; min-height: 270px; background-color: #f9f9f9; border-radius: 10px;'>", unsafe_allow_html=True)
+        # ESTANTE: Uma única linha flexível pura em HTML/CSS (Garante alinhamento lado a lado no tablet)
+        html_estante = "<div style='display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 35px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
         
         for i, livro in enumerate(st.session_state.livros):
-            largura = max(livro.get('ajuste', 15.0) * 3, 50)
+            largura = max(livro.get('ajuste', 15.0) * 3, 45)
             
-            if st.button(f"👁️ {livro.get('titulo', 'Livro')}", key=f"sel_{i}"):
-                st.session_state.livro_ativo = i
-                st.session_state.mostrar_3d = True
-                st.rerun()
-            
-            # Renderização do Livro na Estante contendo a etiqueta real na parte inferior
-            st.markdown(f"""
-            <div style="width: {largura}px; height: 200px; background: #A084E8; border-radius: 2px; 
-            display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; 
-            box-shadow: 5px 5px 10px rgba(0,0,0,0.3); position: relative; overflow: hidden; padding-top: 10px;">
-                
-                <div style="writing-mode: vertical-rl; font-size: 11px; max-height: 110px; overflow: hidden; text-align: center; font-weight: bold;">
-                    {livro.get('titulo', 'Livro')}
+            # Criamos uma caixinha estilizada com link invisível para clique nativo HTML
+            html_estante += f"""
+            <a href="?selecionar={i}" target="_self" style="text-decoration: none; color: inherit;">
+                <div style="width: {largura}px; height: 200px; background: #A084E8; border-radius: 2px; 
+                display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; 
+                box-shadow: 4px 4px 8px rgba(0,0,0,0.25); position: relative; overflow: hidden; padding-top: 10px; cursor: pointer;">
+                    
+                    <div style="writing-mode: vertical-rl; font-size: 11px; max-height: 110px; overflow: hidden; text-align: center; font-weight: bold; width: 100%;">
+                        {livro.get('titulo', 'Livro')}
+                    </div>
+                    
+                    <div style="width: 100%; height: 55px; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 9px; color: black; border-top: 1px solid #ccc; line-height: 1.1; overflow: hidden; padding: 1px;">
+                        <div style="font-weight: bold; text-align: center; width: 100%; white-space: nowrap; overflow: hidden;">{livro.get('cdd', '')}</div>
+                        <div style="font-size: 8px; white-space: nowrap; overflow: hidden;">{livro.get('ed', '')}</div>
+                        <div style="font-size: 8px; white-space: nowrap; overflow: hidden;">{livro.get('ex', '')}</div>
+                    </div>
                 </div>
-                
-                <div style="width: 100%; height: 55px; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 9px; color: black; border-top: 1px solid #ccc; line-height: 1.1; padding: 2px;">
-                    <div style="font-weight: bold; font-size: 9px; text-align: center; width: 100%; word-wrap: break-word;">{livro.get('cdd', '')}</div>
-                    <div style="font-size: 8px; transform: scale(0.9); margin-top: 1px;">{livro.get('ed', '')}</div>
-                    <div style="font-size: 8px; transform: scale(0.9);">{livro.get('ex', '')}</div>
-                </div>
-                
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            </a>
+            """
+        html_estante += "</div>"
+        st.markdown(html_estante, unsafe_allow_html=True)
         
+        # Monitora cliques na estante via parâmetros da URL do Streamlit
+        parametros = st.query_params
+        if "selecionar" in parametros:
+            st.session_state.livro_ativo = int(parametros["selecionar"])
+            st.session_state.mostrar_3d = True
+
+        # Botão alternativo caso o clique na imagem falhe em telas touch antigas
         st.write(" ")
+        opcoes_livros = [f"{i+1}. {l.get('titulo')}" for i, l in enumerate(st.session_state.livros)]
+        escolha = st.selectbox("Selecione o livro para calibrar abaixo:", opcoes_livros, index=st.session_state.livro_ativo)
+        
+        idx_novo = opcoes_livros.index(escolha)
+        if idx_novo != st.session_state.livro_ativo:
+            st.session_state.livro_ativo = idx_novo
+            st.session_state.mostrar_3d = True
+            st.rerun()
+            
+        st.write("---")
         
         # INTERFACE INFERIOR LADO A LADO
         if st.session_state.mostrar_3d:
@@ -146,7 +160,7 @@ elif st.session_state.tela == "calibragem":
                 st.markdown(f"""
                 **Dados do Livro:**
                 * **Classificação:** {livro_sel.get('cdd', 'Sem Classificação')}
-                * **Páginas:** {pags_txt if pags_txt else 'Não informada'} pág.
+                * **Páginas:** {pags_txt} pág.
                 * **Dimensão:** {dim_txt if dim_txt and dim_txt != 'nan' else 'Não informada'}
                 """)
                 
@@ -180,4 +194,3 @@ elif st.session_state.tela == "calibragem":
                 </div>
                 """
                 st.markdown(html_renderizado, unsafe_allow_html=True)
-
