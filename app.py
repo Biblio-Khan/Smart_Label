@@ -36,7 +36,6 @@ def mudar_tela(nova_tela):
 if st.session_state.tela == "entrada":
     st.title("📝 BiblioKhan | Entrada de Dados")
     
-    # Alerta Fixo de Sucesso Limpo
     if st.session_state.mensagem_sucesso:
         st.success(st.session_state.mensagem_sucesso)
         st.session_state.mensagem_sucesso = ""
@@ -102,8 +101,10 @@ if st.session_state.tela == "entrada":
                 "Extra 2": val_extra2 if val_extra2 else "---"
             }
             
-            # Título incluído fixo no topo da pré-visualização da etiqueta
-            html_preview_linhas = f'<div style="font-size: 11px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 4px; padding-bottom: 2px; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{titulo if titulo else "TÍTULO"}</div>'
+            # Dinâmica de redução de tamanho por tamanho de texto no preview manual
+            tamanho_fonte_titulo = "11px" if len(titulo) < 20 else ("9px" if len(titulo) < 40 else "8px")
+            
+            html_preview_linhas = f'<div style="font-size: {tamanho_fonte_titulo}; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 4px; padding-bottom: 2px; width: 100%; word-wrap: break-word; line-height: 1.1; max-height: 45px; overflow: hidden;">{titulo.upper() if titulo else "TÍTULO"}</div>'
             
             for tag in st.session_state.cfg_ordem_linhas:
                 estilo_linha = "font-weight: bold; font-size: 14px;" if tag in ["Classificação", "Extra 1"] else "font-size: 12px;"
@@ -249,7 +250,7 @@ elif st.session_state.tela == "calibragem":
                     st.session_state.mostrar_3d = True
                     st.rerun()
         
-        # --- ESTANTE DIGITAL COM TÍTULO NA ETIQUETA ---
+        # --- ESTANTE DIGITAL COM QUEBRA INTELIGENTE DE TÍTULO ---
         html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
         
         for i, livro in enumerate(st.session_state.livros):
@@ -257,8 +258,12 @@ elif st.session_state.tela == "calibragem":
             borda_selecao = "outline: 3px solid #4B0082;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
             t_tit = livro.get('titulo', 'Livro')
             
-            # Linha do título adicionada aqui no topo interno da etiqueta da estante
-            linhas_etiqueta = f'<div style="font-size: 8px; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 100%; padding-bottom: 1px;">{t_tit.upper()}</div>'
+            # CÁLCULO DINÂMICO DA FONTE DO TÍTULO NA ESTANTE (Evita corte, joga pra baixo e diminui)
+            tamanho_fonte_estante = "8px" if len(t_tit) < 18 else ("7px" if len(t_tit) < 35 else "6px")
+            if largura_lombada < 95 and len(t_tit) > 25:
+                tamanho_fonte_estante = "6px"
+
+            linhas_etiqueta = f'<div style="font-size: {tamanho_fonte_estante}; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 3px; word-wrap: break-word; width: 100%; padding-bottom: 1px; line-height: 1.1; max-height: 35px; overflow: hidden;">{t_tit.upper()}</div>'
             
             mapa_valores = {
                 "Classificação": f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{livro.get("cdd", "")}</div>',
@@ -269,9 +274,9 @@ elif st.session_state.tela == "calibragem":
             }
             
             linhas_etiqueta += "".join([mapa_valores[chave] for chave in ordem_linhas_ativa if chave in mapa_valores])
-            altura_etiqueta_estante = "78px" if len(ordem_linhas_ativa) > 3 else "65px"
+            altura_etiqueta_estante = "85px" if len(ordem_linhas_ativa) > 3 else "72px"
 
-            html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 40px; line-height: 1.1;">{t_tit}</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #ccc; padding: 4px 2px; text-align: center; box-sizing: border-box; line-height: 1.1; min-height: {altura_etiqueta_estante}; display: flex; flex-direction: column; justify-content: center;">{linhas_etiqueta}</div></div>'
+            html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 40px; line-height: 1.1;">{t_tit[:15]}...</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #ccc; padding: 4px 2px; text-align: center; box-sizing: border-box; line-height: 1.1; min-height: {altura_etiqueta_estante}; display: flex; flex-direction: column; justify-content: center;">{linhas_etiqueta}</div></div>'
             
         html_estante += "</div>"
         st.markdown(html_estante, unsafe_allow_html=True)
@@ -319,8 +324,13 @@ elif st.session_state.tela == "calibragem":
                 cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
                 esp_3d = max(val_atual * 6, 60)
                 
-                # Linha do título incluída fixa no topo interno do renderizador 3D
-                linhas_3d = f'<div style="text-align: center; font-size: 9px; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 3px; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-bottom: 1px;">{livro_sel.get("titulo", "").upper()}</div>'
+                # FONTE AUTO AJUSTÁVEL DO RENDERIZADOR 3D: Pega a espessura da lombada e o tamanho do texto para calibrar
+                t_tit_sel = livro_sel.get("titulo", "")
+                tamanho_fonte_3d = "10px" if len(t_tit_sel) < 20 else ("8px" if len(t_tit_sel) < 40 else "7px")
+                if esp_3d < 85 and len(t_tit_sel) > 20:
+                    tamanho_fonte_3d = "7px"
+
+                linhas_3d = f'<div style="text-align: center; font-size: {tamanho_fonte_3d}; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 4px; width: 100%; word-wrap: break-word; padding-bottom: 2px; line-height: 1.1; max-height: 50px; overflow: hidden;">{t_tit_sel.upper()}</div>'
                 
                 mapa_3d = {
                     "Classificação": f'<div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%; word-wrap: break-word;">{livro_sel.get("cdd", "")}</div>',
@@ -330,7 +340,7 @@ elif st.session_state.tela == "calibragem":
                     "Extra 2": f'<div style="text-align: center; font-size: 10px; color: #065F46; font-weight: bold;">{livro_sel.get("extra2", "")}</div>' if livro_sel.get("extra2") else ""
                 }
                 linhas_3d += "".join([mapa_3d[chave] for chave in ordem_linhas_ativa if chave in mapa_3d])
-                altura_etiqueta_3d = "125px" if len(ordem_linhas_ativa) > 3 else "105px"
+                altura_etiqueta_3d = "135px" if len(ordem_linhas_ativa) > 3 else "115px"
 
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
@@ -343,3 +353,4 @@ elif st.session_state.tela == "calibragem":
                 </div>
                 """
                 st.markdown(html_renderizado, unsafe_allow_html=True)
+                      
