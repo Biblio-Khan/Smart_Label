@@ -31,40 +31,6 @@ if "cfg_usar_extra2" not in st.session_state:
 if "cfg_nome_extra2" not in st.session_state:
     st.session_state.cfg_nome_extra2 = "Coleção"
 
-# --- SIDEBAR: PAINEL DE CUSTOMIZAÇÃO PERMANENTE ---
-st.sidebar.title("⚙️ Customizar Etiqueta")
-st.sidebar.write("Defina o padrão visual da sua biblioteca:")
-
-# Checkboxes vinculados ao estado permanente
-exibir_cdd = st.sidebar.checkbox("Exibir Classificação (CDD/CDU)", value=st.session_state.cfg_exibir_cdd)
-exibir_ed = st.sidebar.checkbox("Exibir Edição", value=st.session_state.cfg_exibir_ed)
-exibir_ex = st.sidebar.checkbox("Exibir Exemplar", value=st.session_state.cfg_exibir_ex)
-
-st.sidebar.write("---")
-st.sidebar.write("➕ Campos Customizados:")
-
-usar_extra1 = st.sidebar.checkbox("Ativar Campo Extra 1", value=st.session_state.cfg_usar_extra1)
-nome_extra1 = st.session_state.cfg_nome_extra1
-if usar_extra1:
-    nome_extra1 = st.sidebar.text_input("Nome do Campo 1 (ex: Cutter)", value=st.session_state.cfg_nome_extra1)
-
-usar_extra2 = st.sidebar.checkbox("Ativar Campo Extra 2", value=st.session_state.cfg_usar_extra2)
-nome_extra2 = st.session_state.cfg_nome_extra2
-if usar_extra2:
-    nome_extra2 = st.sidebar.text_input("Nome do Campo 2 (ex: Coleção)", value=st.session_state.cfg_nome_extra2)
-
-st.sidebar.write("---")
-# Botão para travar a configuração permanentemente na sessão
-if st.sidebar.button("💾 Tornar Campos Permanentes", type="primary", use_container_width=True):
-    st.session_state.cfg_exibir_cdd = exibir_cdd
-    st.session_state.cfg_exibir_ed = exibir_ed
-    st.session_state.cfg_exibir_ex = exibir_ex
-    st.session_state.cfg_usar_extra1 = usar_extra1
-    st.session_state.cfg_nome_extra1 = nome_extra1
-    st.session_state.cfg_usar_extra2 = usar_extra2
-    st.session_state.cfg_nome_extra2 = nome_extra2
-    st.sidebar.success("Padrão da biblioteca salvo!")
-
 def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
 
@@ -73,6 +39,51 @@ def mudar_tela(nova_tela):
 # ==========================================================
 if st.session_state.tela == "entrada":
     st.title("📝 BiblioKhan | Entrada de Dados")
+    
+    # PAINEL DE CUSTOMIZAÇÃO CENTRALIZADO (Dentro de uma caixinha retrátil)
+    with st.expander("⚙️ Configurar Padrão da Etiqueta da Biblioteca (Clique para abrir/fechar)"):
+        st.write("Defina quais informações devem aparecer permanentemente nas suas etiquetas:")
+        
+        c_cfg1, c_cfg2 = st.columns(2)
+        
+        with c_cfg1:
+            exibir_cdd = st.checkbox("Exibir Classificação (CDD/CDU)", value=st.session_state.cfg_exibir_cdd)
+            exibir_ed = st.checkbox("Exibir Edição", value=st.session_state.cfg_exibir_ed)
+            exibir_ex = st.checkbox("Exibir Exemplar", value=st.session_state.cfg_exibir_ex)
+        
+        with c_cfg2:
+            usar_extra1 = st.checkbox("Ativar Campo Extra 1", value=st.session_state.cfg_usar_extra1)
+            nome_extra1 = st.session_state.cfg_nome_extra1
+            if usar_extra1:
+                nome_extra1 = st.text_input("Nome do Campo 1 (ex: Cutter)", value=st.session_state.cfg_nome_extra1, key="input_n_ext1")
+
+            usar_extra2 = st.checkbox("Ativar Campo Extra 2", value=st.session_state.cfg_usar_extra2)
+            nome_extra2 = st.session_state.cfg_nome_extra2
+            if usar_extra2:
+                nome_extra2 = st.text_input("Nome do Campo 2 (ex: Coleção)", value=st.session_state.cfg_nome_extra2, key="input_n_ext2")
+        
+        if st.button("💾 Tornar Campos Permanentes", type="secondary"):
+            st.session_state.cfg_exibir_cdd = exibir_cdd
+            st.session_state.cfg_exibir_ed = exibir_ed
+            st.session_state.cfg_exibir_ex = exibir_ex
+            st.session_state.cfg_usar_extra1 = usar_extra1
+            st.session_state.cfg_nome_extra1 = nome_extra1
+            st.session_state.cfg_usar_extra2 = usar_extra2
+            st.session_state.cfg_nome_extra2 = nome_extra2
+            st.success("Configuração salva com sucesso para esta sessão!")
+            st.rerun()
+
+    # Resgata os valores atuais salvos para usar nos formulários abaixo
+    exibir_cdd = st.session_state.cfg_exibir_cdd
+    exibir_ed = st.session_state.cfg_exibir_ed
+    exibir_ex = st.session_state.cfg_exibir_ex
+    usar_extra1 = st.session_state.cfg_usar_extra1
+    nome_extra1 = st.session_state.cfg_nome_extra1
+    usar_extra2 = st.session_state.cfg_usar_extra2
+    nome_extra2 = st.session_state.cfg_nome_extra2
+
+    st.write("---")
+    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -89,7 +100,7 @@ if st.session_state.tela == "entrada":
             edicao = c3.text_input("Edição", value="1.ed.")
             exemplar = c4.text_input("Exemplar", value="Ex.1")
             
-            # Inputs dinâmicos baseados no que está ativo/salvo no sistema
+            # Inputs dinâmicos no formulário com base nos extras permanentes ativos
             val_extra1 = ""
             if usar_extra1:
                 val_extra1 = st.text_input(f"{nome_extra1}")
@@ -163,6 +174,15 @@ elif st.session_state.tela == "calibragem":
     
     st.write("---")
     
+    # Resgata as configurações salvas no estado
+    exibir_cdd = st.session_state.cfg_exibir_cdd
+    exibir_ed = st.session_state.cfg_exibir_ed
+    exibir_ex = st.session_state.cfg_exibir_ex
+    usar_extra1 = st.session_state.cfg_usar_extra1
+    nome_extra1 = st.session_state.cfg_nome_extra1
+    usar_extra2 = st.session_state.cfg_usar_extra2
+    nome_extra2 = st.session_state.cfg_nome_extra2
+
     if not st.session_state.livros:
         st.warning("Nenhum livro cadastrado.")
     else:
@@ -176,7 +196,7 @@ elif st.session_state.tela == "calibragem":
                     st.session_state.mostrar_3d = True
                     st.rerun()
         
-        # --- ESTANTE DIGITAL PROTEGIDA (CÓDIGO ÚNICO EM LINHA - EM PARCERIA COM AS CONFIGURAÇÕES ATIVAS) ---
+        # --- ESTANTE DIGITAL PROTEGIDA (CÓDIGO ÚNICO EM LINHA MANTIDO INTEGRALMENTE) ---
         html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
         
         for i, livro in enumerate(st.session_state.livros):
