@@ -13,37 +13,31 @@ if "livro_ativo" not in st.session_state:
 if "mostrar_3d" not in st.session_state:
     st.session_state.mostrar_3d = False
 
-# --- INICIALIZAÇÃO DOS CAMPOS PERMANENTES DA BIBLIOTECA ---
-if "cfg_exibir_cdd" not in st.session_state:
-    st.session_state.cfg_exibir_cdd = True
-if "cfg_exibir_ed" not in st.session_state:
-    st.session_state.cfg_exibir_ed = True
-if "cfg_exibir_ex" not in st.session_state:
-    st.session_state.cfg_exibir_ex = True
+# --- CONFIGURAÇÕES DE EXIBIÇÃO E ORDEM PERMANENTE ---
+if "cfg_exibir_cdd" not in st.session_state: st.session_state.cfg_exibir_cdd = True
+if "cfg_exibir_ed" not in st.session_state: st.session_state.cfg_exibir_ed = True
+if "cfg_exibir_ex" not in st.session_state: st.session_state.cfg_exibir_ex = True
+if "cfg_usar_extra1" not in st.session_state: st.session_state.cfg_usar_extra1 = False
+if "cfg_nome_extra1" not in st.session_state: st.session_state.cfg_nome_extra1 = "Cutter"
+if "cfg_usar_extra2" not in st.session_state: st.session_state.cfg_usar_extra2 = False
+if "cfg_nome_extra2" not in st.session_state: st.session_state.cfg_nome_extra2 = "Coleção"
 
-if "cfg_usar_extra1" not in st.session_state:
-    st.session_state.cfg_usar_extra1 = False
-if "cfg_nome_extra1" not in st.session_state:
-    st.session_state.cfg_nome_extra1 = "Cutter"
-
-if "cfg_usar_extra2" not in st.session_state:
-    st.session_state.cfg_usar_extra2 = False
-if "cfg_nome_extra2" not in st.session_state:
-    st.session_state.cfg_nome_extra2 = "Coleção"
+# Definição da ordem padrão das linhas da etiqueta
+if "cfg_ordem_linhas" not in st.session_state:
+    st.session_state.cfg_ordem_linhas = ["Classificação", "Extra 1", "Edição", "Exemplar", "Extra 2"]
 
 def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
 
 # ==========================================================
-# TELA 1: ENTRADA DE DADOS
+# TELA 1: ENTRADA DE DADOS & CONFIGURAÇÃO AVANÇADA
 # ==========================================================
 if st.session_state.tela == "entrada":
     st.title("📝 BiblioKhan | Entrada de Dados")
     
-    # PAINEL DE CUSTOMIZAÇÃO CENTRALIZADO (Dentro de uma caixinha retrátil)
-    with st.expander("⚙️ Configurar Padrão da Etiqueta da Biblioteca (Clique para abrir/fechar)"):
-        st.write("Defina quais informações devem aparecer permanentemente nas suas etiquetas:")
-        
+    # PAINEL DE CONFIGURAÇÃO DA SMART LABEL
+    with st.expander("⚙️ Configurar Padrão e Ordem da Etiqueta (Clique para abrir/fechar)"):
+        st.markdown("### 1. Escolha as informações visíveis:")
         c_cfg1, c_cfg2 = st.columns(2)
         
         with c_cfg1:
@@ -61,8 +55,58 @@ if st.session_state.tela == "entrada":
             nome_extra2 = st.session_state.cfg_nome_extra2
             if usar_extra2:
                 nome_extra2 = st.text_input("Nome do Campo 2 (ex: Coleção)", value=st.session_state.cfg_nome_extra2, key="input_n_ext2")
+
+        st.markdown("---")
+        st.markdown("### 2. Defina a Ordem de Cima para Baixo:")
+        st.info("Mude a ordem dos elementos abaixo para reorganizar a sequência de linhas na etiqueta.")
         
-        if st.button("💾 Tornar Campos Permanentes", type="secondary"):
+        # Mapeamento amigável para exibição
+        nomes_mapeados = {
+            "Classificação": "Classificação" if exibir_cdd else None,
+            "Extra 1": f"Extra 1 ({nome_extra1})" if usar_extra1 else None,
+            "Edição": "Edição" if exibir_ed else None,
+            "Exemplar": "Exemplar" if exibir_ex else None,
+            "Extra 2": f"Extra 2 ({nome_extra2})" if usar_extra2 else None,
+        }
+        # Filtra apenas os que estão ativos no momento
+        itens_ativos = [k for k, v in nomes_mapeados.items() if v is not None]
+        
+        # Garante que a lista guardada tenha todos os itens sem duplicatas
+        ordem_atual = [x for x in st.session_state.cfg_ordem_linhas if x in itens_ativos]
+        for item in itens_ativos:
+            if item not in ordem_atual:
+                ordem_atual.append(item)
+                
+        # Interface de reordenação dinâmica por selectboxes
+        nova_ordem_escolhida = []
+        for rank in range(len(itens_ativos)):
+            opcoes_disponiveis = [x for x in itens_ativos if x not in nova_ordem_escolhida]
+            default_index = 0
+            if rank < len(ordem_atual) and ordem_atual[rank] in opcoes_disponiveis:
+                default_index = opcoes_disponiveis.index(ordem_atual[rank])
+                
+            escolha_linha = st.selectbox(f"Linha {rank + 1} da Etiqueta:", opcoes_disponiveis, index=default_index, key=f"ordem_row_{rank}")
+            nova_ordem_escolhida.append(escolha_linha)
+
+        # PRE-VISUALIZAÇÃO DA ETIQUETA PURA (Simulação de Impressão)
+        st.markdown("---")
+        st.markdown("### 📋 Pré-visualização da Etiqueta Pura:")
+        
+        exemplo_mock = {"Classificação": "813.54", "Extra 1": "S755m", "Edição": "2.ed.", "Exemplar": "Ex.3", "Extra 2": "REF"}
+        html_preview_linhas = ""
+        for tag in nova_ordem_escolhida:
+            estilo_linha = "font-weight: bold; font-size: 15px;" if tag in ["Classificação", "Extra 1"] else "font-size: 13px;"
+            html_preview_linhas += f'<div style="{estilo_linha}">{exemplo_mock[tag]}</div>'
+            
+        st.markdown(f"""
+        <div style="display: flex; justify-content: center; background: #e0e0e0; padding: 15px; border-radius: 5px;">
+            <div style="width: 120px; min-height: 140px; background: white; color: black; border: 1px dashed #666; font-family: 'Courier New', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); line-height: 1.3;">
+                {html_preview_linhas}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("💾 Salvar Configuração Permanente", type="primary"):
             st.session_state.cfg_exibir_cdd = exibir_cdd
             st.session_state.cfg_exibir_ed = exibir_ed
             st.session_state.cfg_exibir_ex = exibir_ex
@@ -70,10 +114,11 @@ if st.session_state.tela == "entrada":
             st.session_state.cfg_nome_extra1 = nome_extra1
             st.session_state.cfg_usar_extra2 = usar_extra2
             st.session_state.cfg_nome_extra2 = nome_extra2
-            st.success("Configuração salva com sucesso para esta sessão!")
+            st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
+            st.success("Configurações e ordem salvos com sucesso!")
             st.rerun()
 
-    # Resgata os valores atuais salvos para usar nos formulários abaixo
+    # Carrega dados do estado estável
     exibir_cdd = st.session_state.cfg_exibir_cdd
     exibir_ed = st.session_state.cfg_exibir_ed
     exibir_ex = st.session_state.cfg_exibir_ex
@@ -81,9 +126,9 @@ if st.session_state.tela == "entrada":
     nome_extra1 = st.session_state.cfg_nome_extra1
     usar_extra2 = st.session_state.cfg_usar_extra2
     nome_extra2 = st.session_state.cfg_nome_extra2
+    ordem_linhas_ativa = st.session_state.cfg_ordem_linhas
 
     st.write("---")
-    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -91,69 +136,47 @@ if st.session_state.tela == "entrada":
         with st.form("manual"):
             titulo = st.text_input("Título *")
             classificacao = st.text_input("Classificação *")
-            
             c1, c2 = st.columns(2)
             paginas = c1.number_input("Páginas", min_value=1, value=100)
             dimensao = c2.text_input("Dimensão (ex: 23 cm)")
-            
             c3, c4 = st.columns(2)
             edicao = c3.text_input("Edição", value="1.ed.")
             exemplar = c4.text_input("Exemplar", value="Ex.1")
             
-            # Inputs dinâmicos no formulário com base nos extras permanentes ativos
-            val_extra1 = ""
-            if usar_extra1:
-                val_extra1 = st.text_input(f"{nome_extra1}")
-                
-            val_extra2 = ""
-            if usar_extra2:
-                val_extra2 = st.text_input(f"{nome_extra2}")
+            val_extra1 = st.text_input(f"{nome_extra1}") if usar_extra1 else ""
+            val_extra2 = st.text_input(f"{nome_extra2}") if usar_extra2 else ""
             
             if st.form_submit_button("Adicionar à Lista"):
                 if titulo and classificacao:
                     ajuste = (paginas / 2) * 0.1 + 2.0
                     st.session_state.livros.append({
-                        "titulo": titulo.strip(), 
-                        "cdd": classificacao.strip(), 
-                        "paginas": str(paginas),
-                        "dimensao": dimensao.strip(),
-                        "ed": edicao.strip(),
-                        "ex": exemplar.strip(),
-                        "extra1": val_extra1.strip() if val_extra1 else "",
-                        "extra2": val_extra2.strip() if val_extra2 else "",
-                        "ajuste": min(ajuste, 50.0)
+                        "titulo": titulo.strip(), "cdd": classificacao.strip(), "paginas": str(paginas),
+                        "dimensao": dimensao.strip(), "ed": edicao.strip(), "ex": exemplar.strip(),
+                        "extra1": val_extra1.strip(), "extra2": val_extra2.strip(), "ajuste": min(ajuste, 50.0)
                     })
                     st.success(f"'{titulo}' adicionado!")
-                else:
-                    st.error("Por favor, preencha Título e Classificação.")
+                else: st.error("Preencha Título e Classificação.")
     
     with col2:
         st.subheader("Importar via CSV")
         info_csv = f"O CSV deve conter: titulo, cdd, paginas, dimensao, ed, ex."
-        if usar_extra1: info_csv += f" Envie também a coluna: {nome_extra1.lower()}"
-        if usar_extra2: info_csv += f" Envie também a coluna: {nome_extra2.lower()}"
+        if usar_extra1: info_csv += f" Coluna extra: {nome_extra1.lower()}"
+        if usar_extra2: info_csv += f" Coluna extra: {nome_extra2.lower()}"
         st.info(info_csv)
-        
         file = st.file_uploader("Subir arquivo CSV", type=["csv"])
         if file:
             df = pd.read_csv(file)
             df.columns = df.columns.str.lower()
             for _, row in df.iterrows():
                 pags = str(row.get('paginas', '100'))
-                try:
-                    qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
-                except:
-                    qtd_pags = 100
+                try: qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
+                except: qtd_pags = 100
                 ajuste = (qtd_pags / 2) * 0.1 + 2.0
                 st.session_state.livros.append({
-                    "titulo": str(row.get('titulo', 'Sem título')).strip(), 
-                    "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
-                    "paginas": str(qtd_pags),
-                    "dimensao": str(row.get('dimensao', '')).strip(),
-                    "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(),
-                    "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
-                    "extra1": str(row.get(nome_extra1.lower(), '')).strip(),
-                    "extra2": str(row.get(nome_extra2.lower(), '')).strip(),
+                    "titulo": str(row.get('titulo', 'Sem título')).strip(), "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
+                    "paginas": str(qtd_pags), "dimensao": str(row.get('dimensao', '')).strip(),
+                    "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(), "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
+                    "extra1": str(row.get(nome_extra1.lower(), '')).strip(), "extra2": str(row.get(nome_extra2.lower(), '')).strip(),
                     "ajuste": min(ajuste, 50.0)
                 })
             st.success("Dados importados com sucesso!")
@@ -163,7 +186,7 @@ if st.session_state.tela == "entrada":
         st.rerun()
 
 # ==========================================================
-# TELA 2: ESTANTE DE CALIBRAGEM (Preservada e Intocável)
+# TELA 2: ESTANTE DE CALIBRAGEM (Preservada e Adaptável)
 # ==========================================================
 elif st.session_state.tela == "calibragem":
     st.title("📚 Estante de Calibragem")
@@ -173,21 +196,12 @@ elif st.session_state.tela == "calibragem":
         st.rerun()
     
     st.write("---")
-    
-    # Resgata as configurações salvas no estado
-    exibir_cdd = st.session_state.cfg_exibir_cdd
-    exibir_ed = st.session_state.cfg_exibir_ed
-    exibir_ex = st.session_state.cfg_exibir_ex
-    usar_extra1 = st.session_state.cfg_usar_extra1
-    nome_extra1 = st.session_state.cfg_nome_extra1
-    usar_extra2 = st.session_state.cfg_usar_extra2
-    nome_extra2 = st.session_state.cfg_nome_extra2
+    ordem_linhas_ativa = st.session_state.cfg_ordem_linhas
 
     if not st.session_state.livros:
         st.warning("Nenhum livro cadastrado.")
     else:
         st.write("👉 **Toque no botão do livro para abrir a calibragem detalhada:**")
-        
         cols_botoes = st.columns(len(st.session_state.livros))
         for i, livro in enumerate(st.session_state.livros):
             with cols_botoes[i]:
@@ -196,28 +210,26 @@ elif st.session_state.tela == "calibragem":
                     st.session_state.mostrar_3d = True
                     st.rerun()
         
-        # --- ESTANTE DIGITAL PROTEGIDA (CÓDIGO ÚNICO EM LINHA MANTIDO INTEGRALMENTE) ---
+        # --- ESTANTE DIGITAL INTOCÁVEL (Montagem em linha única sem quebras de código) ---
         html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
         
         for i, livro in enumerate(st.session_state.livros):
             largura_lombada = max(livro.get('ajuste', 15.0) * 4, 85) 
             borda_selecao = "outline: 3px solid #4B0082;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
-            
             t_tit = livro.get('titulo', 'Livro')
             
-            linhas_etiqueta = ""
-            if exibir_cdd:
-                linhas_etiqueta += f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 1px;">{livro.get("cdd", "")}</div>'
-            if usar_extra1 and livro.get("extra1"):
-                linhas_etiqueta += f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1E3A8A; font-weight: bold;">{livro.get("extra1", "")}</div>'
-            if exibir_ed:
-                linhas_etiqueta += f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ed", "")}</div>'
-            if exibir_ex:
-                linhas_etiqueta += f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ex", "")}</div>'
-            if usar_extra2 and livro.get("extra2"):
-                linhas_etiqueta += f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #065F46;">{livro.get("extra2", "")}</div>'
+            # Mapeia valores reais do livro atual
+            mapa_valores = {
+                "Classificação": f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 1px;">{livro.get("cdd", "")}</div>',
+                "Extra 1": f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1E3A8A; font-weight: bold;">{livro.get("extra1", "")}</div>' if livro.get("extra1") else "",
+                "Edição": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ed", "")}</div>',
+                "Exemplar": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ex", "")}</div>',
+                "Extra 2": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #065F46;">{livro.get("extra2", "")}</div>' if livro.get("extra2") else ""
+            }
             
-            altura_etiqueta_estante = "65px" if (usar_extra1 or usar_extra2) else "55px"
+            # Constrói as linhas respeitando rigorosamente a ordem salva
+            linhas_etiqueta = "".join([mapa_valores[chave] for chave in ordem_linhas_ativa if chave in mapa_valores])
+            altura_etiqueta_estante = "68px" if len(ordem_linhas_ativa) > 3 else "55px"
 
             html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 50px; line-height: 1.1;">{t_tit}</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #ccc; padding: 4px 0; text-align: center; box-sizing: border-box; line-height: 1.1; min-height: {altura_etiqueta_estante}; display: flex; flex-direction: column; justify-content: center;">{linhas_etiqueta}</div></div>'
             
@@ -227,66 +239,46 @@ elif st.session_state.tela == "calibragem":
         st.write(" ")
         st.write("---")
         
-        # ==========================================================
         # INTERFACE INFERIOR LADO A LADO
-        # ==========================================================
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
             livro_sel = st.session_state.livros[idx]
-            
             col_ajustes, col_3d = st.columns([1.2, 1])
             
             with col_ajustes:
                 st.subheader(f"⚙️ Ajustar Espessura: {livro_sel.get('titulo', 'Livro')}")
+                st.markdown(f"**Título:** {livro_sel.get('titulo')} | **Páginas:** {livro_sel.get('paginas')} pág.")
                 
-                pags_txt = livro_sel.get('paginas', 'Não informada')
-                dim_txt = livro_sel.get('dimensao', '')
-                
-                st.markdown(f"""
-                **Informações Registradas:**
-                * **Título:** {livro_sel.get('titulo')}
-                * **Páginas:** {pags_txt} pág.
-                * **Dimensão:** {dim_txt if dim_txt and dim_txt != 'nan' else 'Não informada'}
-                """)
-                
-                if usar_extra1 or usar_extra2:
-                    st.write("**Campos Adicionais da Biblioteca:**")
-                    if usar_extra1:
-                        st.session_state.livros[idx]["extra1"] = st.text_input(f"Editar {nome_extra1}:", value=livro_sel.get("extra1", ""))
-                    if usar_extra2:
-                        st.session_state.livros[idx]["extra2"] = st.text_input(f"Editar {nome_extra2}:", value=livro_sel.get("extra2", ""))
+                if st.session_state.cfg_usar_extra1 or st.session_state.cfg_usar_extra2:
+                    st.write("**Campos Adicionais:**")
+                    if st.session_state.cfg_usar_extra1:
+                        st.session_state.livros[idx]["extra1"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra1}:", value=livro_sel.get("extra1", ""))
+                    if st.session_state.cfg_usar_extra2:
+                        st.session_state.livros[idx]["extra2"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra2}:", value=livro_sel.get("extra2", ""))
                 
                 st.write("---")
-                novo_val = st.slider(
-                    "Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key="slider_lombada"
-                )
+                novo_val = st.slider("Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key="slider_lombada")
                 st.session_state.livros[idx]['ajuste'] = novo_val
                 
-                if novo_val < 5.0:
-                    st.error("⚠️ ATENÇÃO: Lombada muito fina (abaixo de 5mm). Use etiqueta de capa!")
-                else:
-                    st.success("✅ Espessura ideal para etiqueta de lombada.")
+                if novo_val < 5.0: st.error("⚠️ Lombada muito fina. Use etiqueta de capa!")
+                else: st.success("✅ Espessura ideal para lombada.")
             
             with col_3d:
                 st.subheader("🔍 Visualização Detalhada da Lombada")
-                
                 val_atual = st.session_state.livros[idx]['ajuste']
                 cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
                 esp_3d = max(val_atual * 6, 60)
                 
-                linhas_3d = ""
-                if exibir_cdd:
-                    linhas_3d += f'<div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%; word-wrap: break-word;">{livro_sel.get("cdd", "")}</div>'
-                if usar_extra1 and livro_sel.get("extra1"):
-                    linhas_3d += f'<div style="text-align: center; font-size: 10px; margin-top: 2px; font-weight: bold; color: #1E3A8A;">{livro_sel.get("extra1", "")}</div>'
-                if exibir_ed:
-                    linhas_3d += f'<div style="text-align: center; font-size: 10px; margin-top: 2px;">{livro_sel.get("ed", "")}</div>'
-                if exibir_ex:
-                    linhas_3d += f'<div style="text-align: center; font-size: 10px;">{livro_sel.get("ex", "")}</div>'
-                if usar_extra2 and livro_sel.get("extra2"):
-                    linhas_3d += f'<div style="text-align: center; font-size: 10px; color: #065F46; font-weight: bold;">{livro_sel.get("extra2", "")}</div>'
-
-                altura_etiqueta_3d = "110px" if (usar_extra1 or usar_extra2) else "95px"
+                # Renderização 3D obedecendo o mapeamento de ordenação dinâmico
+                mapa_3d = {
+                    "Classificação": f'<div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%; word-wrap: break-word;">{livro_sel.get("cdd", "")}</div>',
+                    "Extra 1": f'<div style="text-align: center; font-size: 10px; margin-top: 2px; font-weight: bold; color: #1E3A8A;">{livro_sel.get("extra1", "")}</div>' if livro_sel.get("extra1") else "",
+                    "Edição": f'<div style="text-align: center; font-size: 10px; margin-top: 2px;">{livro_sel.get("ed", "")}</div>',
+                    "Exemplar": f'<div style="text-align: center; font-size: 10px;">{livro_sel.get("ex", "")}</div>',
+                    "Extra 2": f'<div style="text-align: center; font-size: 10px; color: #065F46; font-weight: bold;">{livro_sel.get("extra2", "")}</div>' if livro_sel.get("extra2") else ""
+                }
+                linhas_3d = "".join([mapa_3d[chave] for chave in ordem_linhas_ativa if chave in mapa_3d])
+                altura_etiqueta_3d = "115px" if len(ordem_linhas_ativa) > 3 else "95px"
 
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
