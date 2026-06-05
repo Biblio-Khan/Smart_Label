@@ -12,6 +12,8 @@ if "livro_ativo" not in st.session_state:
     st.session_state.livro_ativo = 0
 if "mostrar_3d" not in st.session_state:
     st.session_state.mostrar_3d = False
+if "mensagem_sucesso" not in st.session_state:
+    st.session_state.mensagem_sucesso = ""
 
 # --- CONFIGURAÇÕES DE EXIBIÇÃO E ORDEM PERMANENTE ---
 if "cfg_exibir_cdd" not in st.session_state: st.session_state.cfg_exibir_cdd = True
@@ -34,6 +36,12 @@ def mudar_tela(nova_tela):
 if st.session_state.tela == "entrada":
     st.title("📝 BiblioKhan | Entrada de Dados")
     
+    # Exibe a mensagem de confirmação fixa na tela se ela existir
+    if st.session_state.mensagem_sucesso:
+        st.success(st.session_state.mensagem_sucesso)
+        # Limpa para não ficar repetindo infinitamente
+        st.session_state.mensagem_sucesso = ""
+
     # PAINEL DE CONFIGURAÇÃO DA SMART LABEL
     with st.expander("⚙️ Configurar Padrão e Ordem da Etiqueta (Clique para abrir/fechar)", expanded=False):
         st.markdown("### 1. Escolha as informações visíveis:")
@@ -87,7 +95,7 @@ if st.session_state.tela == "entrada":
             st.session_state.cfg_usar_extra2 = usar_extra2
             st.session_state.cfg_nome_extra2 = nome_extra2
             st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-            st.success("Layout salvo como padrão!")
+            st.session_state.mensagem_sucesso = "Layout de etiqueta salvo como padrão!"
             st.rerun()
 
     if 'nova_ordem_escolhida' not in locals():
@@ -144,7 +152,8 @@ if st.session_state.tela == "entrada":
                         st.session_state.cfg_usar_extra2 = usar_extra2
                         st.session_state.cfg_nome_extra2 = nome_extra2
                         
-                        st.toast(f"✅ '{titulo}' adicionado com sucesso!", icon="📖")
+                        # Salva o aviso persistente para a próxima renderização
+                        st.session_state.mensagem_sucesso = f"📖 Livro '{titulo.strip()}' adicionado com sucesso à lista!"
                         st.rerun()
                 else: 
                     st.error("Preencha os campos obrigatórios (Título e Classificação).")
@@ -179,7 +188,7 @@ if st.session_state.tela == "entrada":
             </div>
             """, unsafe_allow_html=True)
 
-    # ABA 2: IMPORTAÇÃO EM LOTE (CSV OU PLANILHA EXCEL)
+    # ABA 2: IMPORTAÇÃO EM LOTE
     with aba_lote:
         st.subheader("Importar em Lote")
         info_lote = f"O arquivo enviado deve conter as colunas básicas: `titulo`, `cdd`, `paginas`, `dimensao`, `ed`, `ex`."
@@ -187,12 +196,10 @@ if st.session_state.tela == "entrada":
         if st.session_state.cfg_usar_extra2: info_lote += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra2.lower()}`"
         st.info(info_lote)
         
-        # Agora o uploader aceita tanto arquivos CSV (.csv) quanto planilhas Excel (.xlsx, .xls)
         file = st.file_uploader("Subir arquivo de acervo (CSV ou Planilha Excel)", type=["csv", "xlsx", "xls"], key="uploader_lote")
         
         if file:
             try:
-                # DETECÇÃO AUTOMÁTICA DO TIPO DE ARQUIVO
                 if file.name.endswith('.csv'):
                     df = pd.read_csv(file)
                 else:
@@ -219,13 +226,18 @@ if st.session_state.tela == "entrada":
                     })
                     contador_sucesso += 1
                     
-                st.success(f"Sucesso! {contador_sucesso} livros importados e adicionados à lista.")
+                st.session_state.mensagem_sucesso = f"📊 Sucesso! {contador_sucesso} livros importados do arquivo."
+                st.rerun()
             except Exception as e:
-                st.error(f"Erro ao processar o arquivo: {e}. Verifique as extensões ou os cabeçalhos.")
+                st.error(f"Erro ao processar o arquivo: {e}.")
 
     # BOTÃO GLOBAL DE TRANSIÇÃO DE TELA
     st.write(" ")
     st.write("---")
+    
+    # Exibe contador na tela para dar feedback visual de quantos livros estão na memória
+    st.metric(label="Total de Livros na Fila Atual", value=len(st.session_state.livros))
+    
     if st.button("Ir para Estante de Calibragem ➡️", type="primary", use_container_width=True, key="btn_ir_estante"):
         st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
         st.session_state.cfg_exibir_cdd = exibir_cdd
@@ -239,7 +251,7 @@ if st.session_state.tela == "entrada":
         st.rerun()
 
 # ==========================================================
-# TELA 2: ESTANTE DE CALIBRAGEM (Preservada e Adaptada)
+# TELA 2: ESTANTE DE CALIBRAGEM (Com Opção de Excluir)
 # ==========================================================
 elif st.session_state.tela == "calibragem":
     st.title("📚 Estante de Calibragem")
@@ -252,9 +264,9 @@ elif st.session_state.tela == "calibragem":
     ordem_linhas_ativa = st.session_state.cfg_ordem_linhas
 
     if not st.session_state.livros:
-        st.warning("Nenhum livro cadastrado.")
+        st.warning("Nenhum livro cadastrado na estante virtual no momento.")
     else:
-        st.write("👉 **Toque no botão do livro para abrir a calibragem detalhada:**")
+        st.write("👉 **Toque no botão do livro para abrir a calibragem detalhada e opções:**")
         cols_botoes = st.columns(len(st.session_state.livros))
         for i, livro in enumerate(st.session_state.livros):
             with cols_botoes[i]:
@@ -263,7 +275,7 @@ elif st.session_state.tela == "calibragem":
                     st.session_state.mostrar_3d = True
                     st.rerun()
         
-        # --- ESTANTE DIGITAL INTOCÁVEL (Montagem em linha estável) ---
+        # --- ESTANTE DIGITAL CONTÍNUA ---
         html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
         
         for i, livro in enumerate(st.session_state.livros):
@@ -290,32 +302,45 @@ elif st.session_state.tela == "calibragem":
         st.write(" ")
         st.write("---")
         
-        # INTERFACE INFERIOR LADO A LADO
+        # INTERFACE INFERIOR DE DETALHES E REMOÇÃO
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
+            # Prevenção caso o índice suma após deleções
+            if idx >= len(st.session_state.livros):
+                st.session_state.mostrar_3d = False
+                st.rerun()
+                
             livro_sel = st.session_state.livros[idx]
             col_ajustes, col_3d = st.columns([1.2, 1])
             
             with col_ajustes:
-                st.subheader(f"⚙️ Ajustar Espessura: {livro_sel.get('titulo', 'Livro')}")
-                st.markdown(f"**Título:** {livro_sel.get('titulo')} | **Páginas:** {livro_sel.get('paginas')} pág.")
+                st.subheader(f"⚙️ Painel do Livro: {livro_sel.get('titulo')}")
+                st.markdown(f"**Páginas:** {livro_sel.get('paginas')} | **Dimensão:** {livro_sel.get('dimensao')}")
                 
                 if st.session_state.cfg_usar_extra1 or st.session_state.cfg_usar_extra2:
                     st.write("**Campos Adicionais:**")
                     if st.session_state.cfg_usar_extra1:
-                        st.session_state.livros[idx]["extra1"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra1}:", value=livro_sel.get("extra1", ""))
+                        st.session_state.livros[idx]["extra1"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra1}:", value=livro_sel.get("extra1", ""), key=f"edit_ex1_{idx}")
                     if st.session_state.cfg_usar_extra2:
-                        st.session_state.livros[idx]["extra2"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra2}:", value=livro_sel.get("extra2", ""))
+                        st.session_state.livros[idx]["extra2"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra2}:", value=livro_sel.get("extra2", ""), key=f"edit_ex2_{idx}")
                 
                 st.write("---")
-                novo_val = st.slider("Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key="slider_lombada")
+                novo_val = st.slider("Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}")
                 st.session_state.livros[idx]['ajuste'] = novo_val
                 
-                if novo_val < 5.0: st.error("⚠️ Lombada muito fina. Use etiqueta de capa!")
-                else: st.success("✅ Espessura ideal para lombada.")
+                st.write(" ")
+                
+                # --- NOVO BOTÃO DE REMOVER LIVRO ---
+                if st.button("❌ Remover este Livro do Acervo", type="secondary", use_container_width=True, key=f"del_book_{idx}"):
+                    titulo_removido = st.session_state.livros[idx].get('titulo', 'Livro')
+                    st.session_state.livros.pop(idx) # Exclui da lista de livros
+                    st.session_state.mostrar_3d = False # Fecha a janela 3D
+                    st.session_state.livro_ativo = 0 # Reseta o index ativo
+                    st.toast(f"🗑️ '{titulo_removido}' foi removido com sucesso!", icon="🗑️")
+                    st.rerun()
             
             with col_3d:
-                st.subheader("🔍 Visualização Detalhada da Lombada")
+                st.subheader("🔍 Lombada Detalhada")
                 val_atual = st.session_state.livros[idx]['ajuste']
                 cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
                 esp_3d = max(val_atual * 6, 60)
