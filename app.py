@@ -36,77 +36,19 @@ def mudar_tela(nova_tela):
 if st.session_state.tela == "entrada":
     st.title("📝 BiblioKhan | Entrada de Dados")
     
-    # Exibe a mensagem de confirmação fixa na tela se ela existir
+    # Alerta Fixo de Sucesso Limpo
     if st.session_state.mensagem_sucesso:
         st.success(st.session_state.mensagem_sucesso)
-        # Limpa para não ficar repetindo infinitamente
         st.session_state.mensagem_sucesso = ""
 
-    # PAINEL DE CONFIGURAÇÃO DA SMART LABEL
-    with st.expander("⚙️ Configurar Padrão e Ordem da Etiqueta (Clique para abrir/fechar)", expanded=False):
-        st.markdown("### 1. Escolha as informações visíveis:")
-        c_cfg1, c_cfg2 = st.columns(2)
-        
-        with c_cfg1:
-            exibir_cdd = st.checkbox("Exibir Classificação (CDD/CDU)", value=st.session_state.cfg_exibir_cdd)
-            exibir_ed = st.checkbox("Exibir Edição", value=st.session_state.cfg_exibir_ed)
-            exibir_ex = st.checkbox("Exibir Exemplar", value=st.session_state.cfg_exibir_ex)
-        
-        with c_cfg2:
-            usar_extra1 = st.checkbox("Ativar Campo Extra 1 (Ex: Cutter)", value=st.session_state.cfg_usar_extra1)
-            nome_extra1 = st.text_input("Personalizar Nome do Campo 1:", value=st.session_state.cfg_nome_extra1, key="input_n_ext1")
+    # --- ABAS DE INTERFACE TOTALMENTE SEPARADAS ---
+    aba_manual, aba_lote, aba_config = st.tabs([
+        "📝 Cadastro Manual", 
+        "📁 Importar via CSV ou Planilha Excel", 
+        "⚙️ Configurar Layout da Etiqueta"
+    ])
 
-            usar_extra2 = st.checkbox("Ativar Campo Extra 2 (Ex: Coleção)", value=st.session_state.cfg_usar_extra2)
-            nome_extra2 = st.text_input("Personalizar Nome do Campo 2:", value=st.session_state.cfg_nome_extra2, key="input_n_ext2")
-
-        st.markdown("---")
-        st.markdown("### 2. Defina a Ordem de Cima para Baixo:")
-        
-        nomes_mapeados = {
-            "Classificação": "Classificação" if exibir_cdd else None,
-            "Extra 1": f"Extra 1 ({nome_extra1})" if usar_extra1 else None,
-            "Edição": "Edição" if exibir_ed else None,
-            "Exemplar": "Exemplar" if exibir_ex else None,
-            "Extra 2": f"Extra 2 ({nome_extra2})" if usar_extra2 else None,
-        }
-        itens_ativos = [k for k, v in nomes_mapeados.items() if v is not None]
-        
-        ordem_atual = [x for x in st.session_state.cfg_ordem_linhas if x in itens_ativos]
-        for item in itens_ativos:
-            if item not in ordem_atual:
-                ordem_atual.append(item)
-                
-        nova_ordem_escolhida = []
-        for rank in range(len(itens_ativos)):
-            opcoes_disponiveis = [x for x in itens_ativos if x not in nova_ordem_escolhida]
-            default_index = 0
-            if rank < len(ordem_atual) and ordem_atual[rank] in opcoes_disponiveis:
-                default_index = opcoes_disponiveis.index(ordem_atual[rank])
-                
-            escolha_linha = st.selectbox(f"Linha {rank + 1} da Etiqueta:", opcoes_disponiveis, index=default_index, key=f"ordem_row_{rank}")
-            nova_ordem_escolhida.append(escolha_linha)
-
-        if st.button("💾 Tornar este Layout Padrão", type="primary"):
-            st.session_state.cfg_exibir_cdd = exibir_cdd
-            st.session_state.cfg_exibir_ed = exibir_ed
-            st.session_state.cfg_exibir_ex = exibir_ex
-            st.session_state.cfg_usar_extra1 = usar_extra1
-            st.session_state.cfg_nome_extra1 = nome_extra1
-            st.session_state.cfg_usar_extra2 = usar_extra2
-            st.session_state.cfg_nome_extra2 = nome_extra2
-            st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-            st.session_state.mensagem_sucesso = "Layout de etiqueta salvo como padrão!"
-            st.rerun()
-
-    if 'nova_ordem_escolhida' not in locals():
-        nova_ordem_escolhida = st.session_state.cfg_ordem_linhas
-
-    st.write("---")
-
-    # --- ABAS PARA ORGANIZAÇÃO VISUAL ---
-    aba_manual, aba_lote = st.tabs(["📝 Cadastro Manual", "📁 Importar via CSV ou Planilha Excel"])
-
-    # ABA 1: CADASTRO MANUAL
+    # ABA 1: CADASTRO MANUAL (Foco e Velocidade)
     with aba_manual:
         col_form, col_preview = st.columns([1.2, 1])
         
@@ -123,6 +65,7 @@ if st.session_state.tela == "entrada":
             edicao = c3.text_input("Edição", value="1.ed.", key="manual_ed")
             exemplar = c4.text_input("Exemplar", value="Ex.1", key="manual_ex")
             
+            # Blocos condicionais rápidos baseados no Layout Salvo
             val_extra1 = ""
             if st.session_state.cfg_usar_extra1:
                 val_extra1 = st.text_input(f"{st.session_state.cfg_nome_extra1}", key="manual_extra1")
@@ -143,16 +86,6 @@ if st.session_state.tela == "entrada":
                     
                     if not st.session_state.livros or st.session_state.livros[-1] != novo_livro:
                         st.session_state.livros.append(novo_livro)
-                        st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-                        st.session_state.cfg_exibir_cdd = exibir_cdd
-                        st.session_state.cfg_exibir_ed = exibir_ed
-                        st.session_state.cfg_exibir_ex = exibir_ex
-                        st.session_state.cfg_usar_extra1 = usar_extra1
-                        st.session_state.cfg_nome_extra1 = nome_extra1
-                        st.session_state.cfg_usar_extra2 = usar_extra2
-                        st.session_state.cfg_nome_extra2 = nome_extra2
-                        
-                        # Salva o aviso persistente para a próxima renderização
                         st.session_state.mensagem_sucesso = f"📖 Livro '{titulo.strip()}' adicionado com sucesso à lista!"
                         st.rerun()
                 else: 
@@ -160,7 +93,7 @@ if st.session_state.tela == "entrada":
 
         with col_preview:
             st.subheader("📋 Etiqueta em Tempo Real")
-            st.caption("Veja como a linha se comporta com os dados atuais digitados:")
+            st.caption("Visualização instantânea baseada nas suas regras de layout:")
             
             dados_reais_digitados = {
                 "Classificação": classificacao if classificacao else "---",
@@ -171,7 +104,7 @@ if st.session_state.tela == "entrada":
             }
             
             html_preview_linhas = ""
-            for tag in nova_ordem_escolhida:
+            for tag in st.session_state.cfg_ordem_linhas:
                 estilo_linha = "font-weight: bold; font-size: 15px;" if tag in ["Classificação", "Extra 1"] else "font-size: 13px;"
                 if (tag == "Classificação" and st.session_state.cfg_exibir_cdd) or \
                    (tag == "Extra 1" and st.session_state.cfg_usar_extra1) or \
@@ -200,10 +133,8 @@ if st.session_state.tela == "entrada":
         
         if file:
             try:
-                if file.name.endswith('.csv'):
-                    df = pd.read_csv(file)
-                else:
-                    df = pd.read_excel(file)
+                if file.name.endswith('.csv'): df = pd.read_csv(file)
+                else: df = pd.read_excel(file)
                 
                 df.columns = df.columns.str.lower()
                 contador_sucesso = 0
@@ -231,27 +162,72 @@ if st.session_state.tela == "entrada":
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}.")
 
-    # BOTÃO GLOBAL DE TRANSIÇÃO DE TELA
-    st.write(" ")
+    # ABA 3: PAINEL DE CONFIGURAÇÕES ISOLADO (Evita lentidão no app)
+    with aba_config:
+        st.subheader("⚙️ Configurações Estruturais da Etiqueta")
+        st.caption("Altere os parâmetros globais e a ordem das linhas abaixo:")
+        
+        c_cfg1, c_cfg2 = st.columns(2)
+        with c_cfg1:
+            exibir_cdd = st.checkbox("Exibir Classificação (CDD/CDU)", value=st.session_state.cfg_exibir_cdd)
+            exibir_ed = st.checkbox("Exibir Edição", value=st.session_state.cfg_exibir_ed)
+            exibir_ex = st.checkbox("Exibir Exemplar", value=st.session_state.cfg_exibir_ex)
+        
+        with c_cfg2:
+            usar_extra1 = st.checkbox("Ativar Campo Extra 1 (Ex: Cutter)", value=st.session_state.cfg_usar_extra1)
+            nome_extra1 = st.text_input("Nome Personalizado do Campo 1:", value=st.session_state.cfg_nome_extra1)
+            usar_extra2 = st.checkbox("Ativar Campo Extra 2 (Ex: Coleção)", value=st.session_state.cfg_usar_extra2)
+            nome_extra2 = st.text_input("Nome Personalizado do Campo 2:", value=st.session_state.cfg_nome_extra2)
+
+        st.markdown("---")
+        st.markdown("#### Definir Sequência de Linhas:")
+        
+        nomes_mapeados = {
+            "Classificação": "Classificação" if exibir_cdd else None,
+            "Extra 1": f"Extra 1 ({nome_extra1})" if usar_extra1 else None,
+            "Edição": "Edição" if exibir_ed else None,
+            "Exemplar": "Exemplar" if exibir_ex else None,
+            "Extra 2": f"Extra 2 ({nome_extra2})" if usar_extra2 else None,
+        }
+        itens_ativos = [k for k, v in nomes_mapeados.items() if v is not None]
+        
+        ordem_atual = [x for x in st.session_state.cfg_ordem_linhas if x in itens_ativos]
+        for item in itens_ativos:
+            if item not in ordem_atual: ordem_atual.append(item)
+                
+        nova_ordem_escolhida = []
+        for rank in range(len(itens_ativos)):
+            opcoes_disponiveis = [x for x in itens_ativos if x not in nova_ordem_escolhida]
+            default_index = 0
+            if rank < len(ordem_atual) and ordem_atual[rank] in opcoes_disponiveis:
+                default_index = opcoes_disponiveis.index(ordem_atual[rank])
+                
+            escolha_linha = st.selectbox(f"Linha {rank + 1}:", opcoes_disponiveis, index=default_index, key=f"cfg_order_{rank}")
+            nova_ordem_escolhida.append(escolha_linha)
+
+        st.write(" ")
+        if st.button("💾 Salvar Modificações de Layout", type="primary", use_container_width=True):
+            st.session_state.cfg_exibir_cdd = exibir_cdd
+            st.session_state.cfg_exibir_ed = exibir_ed
+            st.session_state.cfg_exibir_ex = exibir_ex
+            st.session_state.cfg_usar_extra1 = usar_extra1
+            st.session_state.cfg_nome_extra1 = nome_extra1
+            st.session_state.cfg_usar_extra2 = usar_extra2
+            st.session_state.cfg_nome_extra2 = nome_extra2
+            st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
+            st.session_state.mensagem_sucesso = "Layout de etiqueta atualizado com sucesso para todo o acervo!"
+            st.rerun()
+
+    # --- BARRA GLOBAL INFERIOR ---
     st.write("---")
+    st.metric(label="Livros na Fila Atual", value=len(st.session_state.livros))
     
-    # Exibe contador na tela para dar feedback visual de quantos livros estão na memória
-    st.metric(label="Total de Livros na Fila Atual", value=len(st.session_state.livros))
-    
-    if st.button("Ir para Estante de Calibragem ➡️", type="primary", use_container_width=True, key="btn_ir_estante"):
-        st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-        st.session_state.cfg_exibir_cdd = exibir_cdd
-        st.session_state.cfg_exibir_ed = exibir_ed
-        st.session_state.cfg_exibir_ex = exibir_ex
-        st.session_state.cfg_usar_extra1 = usar_extra1
-        st.session_state.cfg_nome_extra1 = nome_extra1
-        st.session_state.cfg_usar_extra2 = usar_extra2
-        st.session_state.cfg_nome_extra2 = nome_extra2
+    if st.button("Ir para Estante de Calibragem ➡️", type="primary", use_container_width=True):
         mudar_tela("calibragem")
         st.rerun()
 
 # ==========================================================
-# TELA 2: ESTANTE DE CALIBRAGEM (Com Opção de Excluir)
+# TELA 2: ESTANTE DE CALIBRAGEM (Intocada e Segura)
 # ==========================================================
 elif st.session_state.tela == "calibragem":
     st.title("📚 Estante de Calibragem")
@@ -305,7 +281,6 @@ elif st.session_state.tela == "calibragem":
         # INTERFACE INFERIOR DE DETALHES E REMOÇÃO
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
-            # Prevenção caso o índice suma após deleções
             if idx >= len(st.session_state.livros):
                 st.session_state.mostrar_3d = False
                 st.rerun()
@@ -329,13 +304,11 @@ elif st.session_state.tela == "calibragem":
                 st.session_state.livros[idx]['ajuste'] = novo_val
                 
                 st.write(" ")
-                
-                # --- NOVO BOTÃO DE REMOVER LIVRO ---
                 if st.button("❌ Remover este Livro do Acervo", type="secondary", use_container_width=True, key=f"del_book_{idx}"):
                     titulo_removido = st.session_state.livros[idx].get('titulo', 'Livro')
-                    st.session_state.livros.pop(idx) # Exclui da lista de livros
-                    st.session_state.mostrar_3d = False # Fecha a janela 3D
-                    st.session_state.livro_ativo = 0 # Reseta o index ativo
+                    st.session_state.livros.pop(idx)
+                    st.session_state.mostrar_3d = False
+                    st.session_state.livro_ativo = 0
                     st.toast(f"🗑️ '{titulo_removido}' foi removido com sucesso!", icon="🗑️")
                     st.rerun()
             
