@@ -1,0 +1,9 @@
+title: Etiquetas
+emoji: 🐠
+colorFrom: green
+colorTo: gray
+sdk: streamlit
+sdk_version: 1.58.0
+python_version: '3.13'
+app_file: app.py
+pinned: false
