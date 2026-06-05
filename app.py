@@ -17,7 +17,8 @@ if "mostrar_3d" not in st.session_state:
 if "campos_personalizados" not in st.session_state:
     st.session_state.campos_personalizados = []
 if "ordem_campos" not in st.session_state:
-    st.session_state.ordem_campos = ["cdd", "ed", "ex"] # Ordem padrão inicial
+    # Título adicionado na ordem padrão inicial
+    st.session_state.ordem_campos = ["titulo", "cdd", "ed", "ex"] 
 
 def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
@@ -28,86 +29,90 @@ def mudar_tela(nova_tela):
 if st.session_state.tela == "entrada":
     st.title("📝 BiblioKhan | Entrada de Dados")
     
-    # Criando as 3 Abas solicitadas
-    aba_manual, aba_upload, aba_config = st.tabs(["📝 Cadastro Manual", "📥 Upload CSV", "⚙️ Configurar Etiqueta"])
+    # Apenas duas abas agora
+    aba_manual, aba_upload = st.tabs(["📝 Cadastro Manual e Configuração", "📥 Upload CSV"])
     
-    # ------------------ ABA 3: CONFIGURAÇÃO ------------------
-    with aba_config:
-        st.subheader("Configuração da Etiqueta")
-        st.write("Crie novos campos (ex: Cutter, Volume) e defina a ordem em que aparecem na lombada.")
-        
-        c_novo_campo, c_btn_campo = st.columns([3, 1])
-        with c_novo_campo:
-            novo_campo = st.text_input("Nome do Novo Campo:", placeholder="Ex: Cutter")
-        with c_btn_campo:
-            st.write("") # Alinhamento
-            st.write("")
-            if st.button("Adicionar Campo", use_container_width=True):
-                campo_limpo = novo_campo.strip()
-                if campo_limpo and campo_limpo not in ["cdd", "ed", "ex"] and campo_limpo not in st.session_state.campos_personalizados:
-                    st.session_state.campos_personalizados.append(campo_limpo)
-                    st.session_state.ordem_campos.append(campo_limpo)
-                    st.rerun()
-                    
-        st.write("---")
-        # Dicionário de tradução para exibir nomes bonitos no multiselect
-        nomes_exibicao = {"cdd": "Classificação", "ed": "Edição", "ex": "Exemplar"}
-        for c in st.session_state.campos_personalizados:
-            nomes_exibicao[c] = c
-            
-        st.session_state.ordem_campos = st.multiselect(
-            "Ordem de exibição na Etiqueta (Selecione na ordem desejada ou remova os que não quer):",
-            options=list(nomes_exibicao.keys()),
-            default=[c for c in st.session_state.ordem_campos if c in nomes_exibicao],
-            format_func=lambda x: nomes_exibicao.get(x, x)
-        )
-
-    # ------------------ ABA 1: MANUAL ------------------
+    # ------------------ ABA 1: MANUAL & CONFIGURAÇÃO ------------------
     with aba_manual:
-        with st.form("manual"):
-            titulo = st.text_input("Título *")
-            classificacao = st.text_input("Classificação *")
+        # Colocando o formulário e a configuração lado a lado
+        col_form, col_config = st.columns([1.2, 1])
+        
+        with col_form:
+            st.subheader("Cadastro Manual")
+            with st.form("manual"):
+                titulo = st.text_input("Título *")
+                classificacao = st.text_input("Classificação *")
+                
+                c1, c2 = st.columns(2)
+                paginas = c1.number_input("Páginas", min_value=1, value=100)
+                dimensao = c2.text_input("Dimensão (ex: 23 cm)")
+                
+                c3, c4 = st.columns(2)
+                edicao = c3.text_input("Edição", value="1.ed.")
+                exemplar = c4.text_input("Exemplar", value="Ex.1")
+                
+                # Renderiza os campos dinâmicos criados na configuração
+                valores_dinamicos = {}
+                if st.session_state.campos_personalizados:
+                    st.write("**Campos Extras:**")
+                    cols_extras = st.columns(min(len(st.session_state.campos_personalizados), 2))
+                    for idx, campo in enumerate(st.session_state.campos_personalizados):
+                        with cols_extras[idx % len(cols_extras)]:
+                            valores_dinamicos[campo] = st.text_input(campo)
+                
+                if st.form_submit_button("Adicionar à Lista"):
+                    if titulo and classificacao:
+                        ajuste = (paginas / 2) * 0.1 + 2.0
+                        novo_livro = {
+                            "titulo": titulo.strip(), 
+                            "cdd": classificacao.strip(), 
+                            "paginas": str(paginas),
+                            "dimensao": dimensao.strip(),
+                            "ed": edicao.strip(),
+                            "ex": exemplar.strip(),
+                            "ajuste": min(ajuste, 50.0)
+                        }
+                        for k, v in valores_dinamicos.items():
+                            novo_livro[k] = v.strip()
+                            
+                        st.session_state.livros.append(novo_livro)
+                        st.success(f"'{titulo}' adicionado!")
+                    else:
+                        st.error("Por favor, preencha Título e Classificação.")
+        
+        with col_config:
+            st.subheader("⚙️ Configuração da Etiqueta")
+            st.info("Crie novos campos (ex: Cutter, Volume) e defina a ordem em que aparecem na lombada.")
             
-            c1, c2 = st.columns(2)
-            paginas = c1.number_input("Páginas", min_value=1, value=100)
-            dimensao = c2.text_input("Dimensão (ex: 23 cm)")
-            
-            c3, c4 = st.columns(2)
-            edicao = c3.text_input("Edição", value="1.ed.")
-            exemplar = c4.text_input("Exemplar", value="Ex.1")
-            
-            # Renderiza os campos dinâmicos criados na aba de configuração
-            valores_dinamicos = {}
-            if st.session_state.campos_personalizados:
-                st.write("**Campos Extras:**")
-                cols_extras = st.columns(min(len(st.session_state.campos_personalizados), 4))
-                for idx, campo in enumerate(st.session_state.campos_personalizados):
-                    with cols_extras[idx % len(cols_extras)]:
-                        valores_dinamicos[campo] = st.text_input(campo)
-            
-            if st.form_submit_button("Adicionar à Lista"):
-                if titulo and classificacao:
-                    ajuste = (paginas / 2) * 0.1 + 2.0
-                    novo_livro = {
-                        "titulo": titulo.strip(), 
-                        "cdd": classificacao.strip(), 
-                        "paginas": str(paginas),
-                        "dimensao": dimensao.strip(),
-                        "ed": edicao.strip(),
-                        "ex": exemplar.strip(),
-                        "ajuste": min(ajuste, 50.0)
-                    }
-                    for k, v in valores_dinamicos.items():
-                        novo_livro[k] = v.strip()
+            c_novo_campo, c_btn_campo = st.columns([2, 1])
+            with c_novo_campo:
+                novo_campo = st.text_input("Nome do Novo Campo:", placeholder="Ex: Cutter")
+            with c_btn_campo:
+                st.write("") # Alinhamento
+                st.write("")
+                if st.button("Criar Campo", use_container_width=True):
+                    campo_limpo = novo_campo.strip()
+                    if campo_limpo and campo_limpo not in ["titulo", "cdd", "ed", "ex"] and campo_limpo not in st.session_state.campos_personalizados:
+                        st.session_state.campos_personalizados.append(campo_limpo)
+                        st.session_state.ordem_campos.append(campo_limpo)
+                        st.rerun()
                         
-                    st.session_state.livros.append(novo_livro)
-                    st.success(f"'{titulo}' adicionado!")
-                else:
-                    st.error("Por favor, preencha Título e Classificação.")
-    
+            st.write("---")
+            # Dicionário de tradução para exibir nomes bonitos no multiselect
+            nomes_exibicao = {"titulo": "Título do Livro", "cdd": "Classificação", "ed": "Edição", "ex": "Exemplar"}
+            for c in st.session_state.campos_personalizados:
+                nomes_exibicao[c] = c
+                
+            st.session_state.ordem_campos = st.multiselect(
+                "Ordem de exibição na Etiqueta (Arraste ou remova):",
+                options=list(nomes_exibicao.keys()),
+                default=[c for c in st.session_state.ordem_campos if c in nomes_exibicao],
+                format_func=lambda x: nomes_exibicao.get(x, x)
+            )
+
     # ------------------ ABA 2: UPLOAD ------------------
     with aba_upload:
-        st.info("O arquivo CSV deve conter: titulo, cdd, paginas, dimensao, ed, ex. Campos extras criados também serão lidos se existirem como colunas.")
+        st.info("O arquivo CSV/XLSX deve conter: titulo, cdd, paginas, dimensao, ed, ex. Campos extras criados também serão lidos se existirem como colunas.")
         file = st.file_uploader("Subir arquivo (CSV ou XLSX)", type=["csv", "xlsx"])
         if file:
             try:
@@ -184,12 +189,15 @@ elif st.session_state.tela == "calibragem":
             borda_selecao = "outline: 3px solid #4B0082;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
             t_tit = livro.get('titulo', 'Livro')
             
-            # Gera as linhas da etiqueta dinamicamente de acordo com a ordem definida
+            # Gera as linhas da etiqueta dinamicamente
             divs_etiqueta = ""
             for campo in st.session_state.ordem_campos:
                 valor = livro.get(campo, '')
                 if valor:
-                    if campo == 'cdd':
+                    if campo == 'titulo':
+                        # Formatação especial para o título na etiqueta compactada
+                        divs_etiqueta += f'<div style="font-weight: bold; font-size: 8px; border-bottom: 1px solid #ddd; margin-bottom: 2px; padding-bottom: 1px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{valor.upper()}</div>'
+                    elif campo == 'cdd':
                         divs_etiqueta += f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 1px;">{valor}</div>'
                     else:
                         divs_etiqueta += f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{valor}</div>'
@@ -246,10 +254,14 @@ elif st.session_state.tela == "calibragem":
                 for campo in st.session_state.ordem_campos:
                     valor = livro_sel.get(campo, '')
                     if valor:
-                        peso_fonte = "bold" if campo == 'cdd' else "normal"
-                        tam_fonte = "11px" if campo == 'cdd' else "10px"
-                        margem = "margin-top: 2px;" if campo != 'cdd' else ""
-                        divs_3d += f'<div style="text-align: center; font-weight: {peso_fonte}; font-size: {tam_fonte}; {margem} width: 100%; word-wrap: break-word;">{valor}</div>'
+                        if campo == 'titulo':
+                            # Formatação especial para o título no 3D
+                            divs_3d += f'<div style="text-align: center; font-weight: bold; font-size: 10px; border-bottom: 1px solid #ccc; width: 100%; margin-bottom: 3px; padding-bottom: 2px; word-wrap: break-word; text-transform: uppercase;">{valor}</div>'
+                        else:
+                            peso_fonte = "bold" if campo == 'cdd' else "normal"
+                            tam_fonte = "11px" if campo == 'cdd' else "10px"
+                            margem = "margin-top: 2px;" if campo != 'cdd' else ""
+                            divs_3d += f'<div style="text-align: center; font-weight: {peso_fonte}; font-size: {tam_fonte}; {margem} width: 100%; word-wrap: break-word;">{valor}</div>'
                 
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
