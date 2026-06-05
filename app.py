@@ -45,24 +45,34 @@ if st.session_state.tela == "entrada":
 # ==========================================================
 # TELA 2: ESTANTE DE CALIBRAGEM
 # ==========================================================
+# ==========================================================
+# TELA 2: ESTANTE DE CALIBRAGEM
+# ==========================================================
 elif st.session_state.tela == "calibragem":
     st.title("📚 Estante de Calibragem")
     if st.button("⬅️ Voltar para Entrada"):
-        mudar_tela("entrada"); st.rerun()
+        # Reseta o livro ativo ao voltar
+        if "mostrar_3d" in st.session_state:
+            del st.session_state.mostrar_3d
+        mudar_tela("entrada")
+        st.rerun()
     
     st.write("---")
     
     if not st.session_state.livros:
         st.warning("Nenhum livro cadastrado.")
     else:
-        # ESTANTE
-        st.markdown("<div style='display: flex; flex-wrap: wrap; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 40px; min-height: 250px; background-color: #f9f9f9; border-radius: 10px;'>", unsafe_allow_html=True)
+        # ESTANTE (Livros bem espaçados)
+        st.markdown("<div style='display: flex; flex-wrap: wrap; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 50px; min-height: 250px; background-color: #f9f9f9; border-radius: 10px;'>", unsafe_allow_html=True)
         
         for i, livro in enumerate(st.session_state.livros):
             largura = max(livro['ajuste'] * 3, 50)
-            # Botão para selecionar livro
+            
+            # Quando clica no botão, ativa a visualização 3D para este livro
             if st.button(f"👁️ {livro['titulo']}", key=f"sel_{i}"):
                 st.session_state.livro_ativo = i
+                st.session_state.mostrar_3d = True # Ativa o gatilho visual
+                st.rerun()
             
             st.markdown(f"""
             <div style="width: {largura}px; height: 180px; background: #A084E8; border-radius: 2px; 
@@ -73,19 +83,43 @@ elif st.session_state.tela == "calibragem":
             """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         
-        # VISUALIZAÇÃO 3D DO LIVRO ATIVO
-        l = st.session_state.livros[st.session_state.livro_ativo]
-        st.subheader(f"Calibragem: {l['titulo']}")
+        st.write(" ")
         
-        # Cores de Aviso
-        cor_aviso = "border: 5px solid #EF4444;" if l['ajuste'] < 5.0 else "border: 5px solid #22C55E;"
-        
-        st.markdown(f"""
-        <div style="perspective: 1000px; display: flex; justify-content: center; margin: 40px 0;">
-            <div style="width: {max(l['ajuste']*6, 60)}px; height: 300px; background: #A084E8; {cor_aviso} transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4);"></div>
-            <div style="width: 150px; height: 300px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3);"></div>
-        </div>
-        """, unsafe_allow_html=True)
+        # SÓ ABRE SE O USUÁRIO CLICOU EM ALGUM LIVRO
+        if "mostrar_3d" in st.session_state and st.session_state.mostrar_3d:
+            l = st.session_state.livros[st.session_state.livro_ativo]
+            
+            # Divide a tela de baixo em duas colunas: Ajustes na Esquerda | 3D na Direita
+            col_ajustes, col_3d = st.columns([1.2, 1])
+            
+            with col_ajustes:
+                st.subheader(f"⚙️ Ajustar: {l['titulo']}")
+                
+                # Slider de Calibragem
+                novo_ajuste = st.slider(
+                    "Largura da Lombada (mm)", 1.0, 50.0, float(l['ajuste']), 0.5, key="slider_ativo"
+                )
+                st.session_state.livros[st.session_state.livro_ativo]['ajuste'] = novo_ajuste
+                
+                # Alertas e Avisos de Cor abaixo do Slider
+                if novo_ajuste < 5.0:
+                    st.error("⚠️ ATENÇÃO: Lombada muito fina (abaixo de 5mm). Use etiqueta de capa!")
+                else:
+                    st.success("✅ Espessura ideal para etiqueta de lombada.")
+            
+            with col_3d:
+                st.subheader("🔍 Visualização 3D")
+                
+                # Cores de Aviso na borda do modelo 3D
+                cor_aviso = "border: 5px solid #EF4444;" if l['ajuste'] < 5.0 else "border: 5px solid #22C55E;"
+                esp_3d = max(l['ajuste'] * 6, 60)
+                
+                st.markdown(f"""
+                <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
+                    <div style="width: {esp_3d}px; height: 280px; background: #A084E8; {cor_aviso} transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; color: white; font-size: 11px;"></div>
+                    <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px;">CAPA</div>
+                </div>
+                """, unsafe_allow_html=True)
         
         # Alertas e Slider
         if l['ajuste'] < 5.0:
