@@ -90,14 +90,13 @@ if st.session_state.tela == "entrada":
             st.success("Layout salvo como padrão!")
             st.rerun()
 
-    # Se não foi salvo explicitamente, assume os valores dinâmicos da interface atual
     if 'nova_ordem_escolhida' not in locals():
         nova_ordem_escolhida = st.session_state.cfg_ordem_linhas
 
     st.write("---")
 
-    # --- CRIAÇÃO DAS ABAS PARA ORGANIZAÇÃO VISUAL ---
-    aba_manual, aba_csv = st.tabs(["📝 Cadastro Manual", "📁 Importar via CSV"])
+    # --- ABAS PARA ORGANIZAÇÃO VISUAL ---
+    aba_manual, aba_lote = st.tabs(["📝 Cadastro Manual", "📁 Importar via CSV ou Planilha Excel"])
 
     # ABA 1: CADASTRO MANUAL
     with aba_manual:
@@ -125,7 +124,6 @@ if st.session_state.tela == "entrada":
                 val_extra2 = st.text_input(f"{st.session_state.cfg_nome_extra2}", key="manual_extra2")
             
             st.write(" ")
-            # Botão definitivo com trava anti-duplicação
             if st.button("➕ Adicionar Livro à Lista", type="primary", use_container_width=True, key="btn_add_manual"):
                 if titulo.strip() and classificacao.strip():
                     ajuste = (paginas / 2) * 0.1 + 2.0
@@ -135,11 +133,8 @@ if st.session_state.tela == "entrada":
                         "extra1": val_extra1.strip(), "extra2": val_extra2.strip(), "ajuste": min(ajuste, 50.0)
                     }
                     
-                    # Evita inserções idênticas em disparos seguidos do botão
                     if not st.session_state.livros or st.session_state.livros[-1] != novo_livro:
                         st.session_state.livros.append(novo_livro)
-                        
-                        # Atualiza o estado das etiquetas globalmente
                         st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
                         st.session_state.cfg_exibir_cdd = exibir_cdd
                         st.session_state.cfg_exibir_ed = exibir_ed
@@ -184,36 +179,49 @@ if st.session_state.tela == "entrada":
             </div>
             """, unsafe_allow_html=True)
 
-    # ABA 2: IMPORTAÇÃO VIA CSV
-    with aba_csv:
+    # ABA 2: IMPORTAÇÃO EM LOTE (CSV OU PLANILHA EXCEL)
+    with aba_lote:
         st.subheader("Importar em Lote")
-        info_csv = f"O arquivo CSV deve conter as colunas básicas: `titulo`, `cdd`, `paginas`, `dimensao`, `ed`, `ex`."
-        if st.session_state.cfg_usar_extra1: info_csv += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra1.lower()}`"
-        if st.session_state.cfg_usar_extra2: info_csv += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra2.lower()}`"
-        st.info(info_csv)
+        info_lote = f"O arquivo enviado deve conter as colunas básicas: `titulo`, `cdd`, `paginas`, `dimensao`, `ed`, `ex`."
+        if st.session_state.cfg_usar_extra1: info_lote += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra1.lower()}`"
+        if st.session_state.cfg_usar_extra2: info_lote += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra2.lower()}`"
+        st.info(info_lote)
         
-        file = st.file_uploader("Subir arquivo CSV de livros", type=["csv"], key="uploader_csv")
+        # Agora o uploader aceita tanto arquivos CSV (.csv) quanto planilhas Excel (.xlsx, .xls)
+        file = st.file_uploader("Subir arquivo de acervo (CSV ou Planilha Excel)", type=["csv", "xlsx", "xls"], key="uploader_lote")
+        
         if file:
-            df = pd.read_csv(file)
-            df.columns = df.columns.str.lower()
-            contador_sucesso = 0
-            for _, row in df.iterrows():
-                pags = str(row.get('paginas', '100'))
-                try: qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
-                except: qtd_pags = 100
-                ajuste = (qtd_pags / 2) * 0.1 + 2.0
-                st.session_state.livros.append({
-                    "titulo": str(row.get('titulo', 'Sem título')).strip(), 
-                    "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
-                    "paginas": str(qtd_pags), "dimensao": str(row.get('dimensao', '')).strip(),
-                    "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(), 
-                    "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
-                    "extra1": str(row.get(st.session_state.cfg_nome_extra1.lower(), '')).strip(), 
-                    "extra2": str(row.get(st.session_state.cfg_nome_extra2.lower(), '')).strip(),
-                    "ajuste": min(ajuste, 50.0)
-                })
-                contador_sucesso += 1
-            st.success(f"Sucesso! {contador_sucesso} livros importados e adicionados à lista.")
+            try:
+                # DETECÇÃO AUTOMÁTICA DO TIPO DE ARQUIVO
+                if file.name.endswith('.csv'):
+                    df = pd.read_csv(file)
+                else:
+                    df = pd.read_excel(file)
+                
+                df.columns = df.columns.str.lower()
+                contador_sucesso = 0
+                
+                for _, row in df.iterrows():
+                    pags = str(row.get('paginas', '100'))
+                    try: qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
+                    except: qtd_pags = 100
+                    ajuste = (qtd_pags / 2) * 0.1 + 2.0
+                    
+                    st.session_state.livros.append({
+                        "titulo": str(row.get('titulo', 'Sem título')).strip(), 
+                        "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
+                        "paginas": str(qtd_pags), "dimensao": str(row.get('dimensao', '')).strip(),
+                        "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(), 
+                        "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
+                        "extra1": str(row.get(st.session_state.cfg_nome_extra1.lower(), '')).strip(), 
+                        "extra2": str(row.get(st.session_state.cfg_nome_extra2.lower(), '')).strip(),
+                        "ajuste": min(ajuste, 50.0)
+                    })
+                    contador_sucesso += 1
+                    
+                st.success(f"Sucesso! {contador_sucesso} livros importados e adicionados à lista.")
+            except Exception as e:
+                st.error(f"Erro ao processar o arquivo: {e}. Verifique as extensões ou os cabeçalhos.")
 
     # BOTÃO GLOBAL DE TRANSIÇÃO DE TELA
     st.write(" ")
