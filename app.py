@@ -3,10 +3,15 @@ import pandas as pd
 
 st.set_page_config(layout="wide", page_title="BiblioKhan Pro")
 
-# --- INICIALIZAÇÃO ---
-if "tela" not in st.session_state: st.session_state.tela = "entrada"
-if "livros" not in st.session_state: st.session_state.livros = []
-if "livro_ativo" not in st.session_state: st.session_state.livro_ativo = 0
+# --- INICIALIZAÇÃO SEGURA DO ESTADO ---
+if "tela" not in st.session_state: 
+    st.session_state.tela = "entrada"
+if "livros" not in st.session_state: 
+    st.session_state.livros = []
+if "livro_ativo" not in st.session_state: 
+    st.session_state.livro_ativo = 0
+if "mostrar_3d" not in st.session_state:
+    st.session_state.mostrar_3d = False
 
 def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
@@ -40,20 +45,16 @@ if st.session_state.tela == "entrada":
             st.success("Dados importados!")
 
     if st.button("Ir para Estante de Calibragem ➡️", type="primary"):
-        mudar_tela("calibragem"); st.rerun()
+        mudar_tela("calibragem")
+        st.rerun()
 
-# ==========================================================
-# TELA 2: ESTANTE DE CALIBRAGEM
-# ==========================================================
 # ==========================================================
 # TELA 2: ESTANTE DE CALIBRAGEM
 # ==========================================================
 elif st.session_state.tela == "calibragem":
     st.title("📚 Estante de Calibragem")
     if st.button("⬅️ Voltar para Entrada"):
-        # Reseta o livro ativo ao voltar
-        if "mostrar_3d" in st.session_state:
-            del st.session_state.mostrar_3d
+        st.session_state.mostrar_3d = False
         mudar_tela("entrada")
         st.rerun()
     
@@ -68,10 +69,9 @@ elif st.session_state.tela == "calibragem":
         for i, livro in enumerate(st.session_state.livros):
             largura = max(livro['ajuste'] * 3, 50)
             
-            # Quando clica no botão, ativa a visualização 3D para este livro
             if st.button(f"👁️ {livro['titulo']}", key=f"sel_{i}"):
                 st.session_state.livro_ativo = i
-                st.session_state.mostrar_3d = True # Ativa o gatilho visual
+                st.session_state.mostrar_3d = True
                 st.rerun()
             
             st.markdown(f"""
@@ -85,24 +85,23 @@ elif st.session_state.tela == "calibragem":
         
         st.write(" ")
         
-        # SÓ ABRE SE O USUÁRIO CLICOU EM ALGUM LIVRO
-        if "mostrar_3d" in st.session_state and st.session_state.mostrar_3d:
-            l = st.session_state.livros[st.session_state.livro_ativo]
+        # INTERFACE INFERIOR LADO A LADO
+        if st.session_state.mostrar_3d:
+            idx = st.session_state.livro_ativo
             
-            # Divide a tela de baixo em duas colunas: Ajustes na Esquerda | 3D na Direita
             col_ajustes, col_3d = st.columns([1.2, 1])
             
             with col_ajustes:
-                st.subheader(f"⚙️ Ajustar: {l['titulo']}")
+                st.subheader(f"⚙️ Ajustar: {st.session_state.livros[idx]['titulo']}")
                 
-                # Slider de Calibragem
-                novo_ajuste = st.slider(
-                    "Largura da Lombada (mm)", 1.0, 50.0, float(l['ajuste']), 0.5, key="slider_ativo"
+                # O Slider altera o valor diretamente no session_state
+                novo_val = st.slider(
+                    "Largura da Lombada (mm)", 1.0, 50.0, float(st.session_state.livros[idx]['ajuste']), 0.5, key="slider_lombada"
                 )
-                st.session_state.livros[st.session_state.livro_ativo]['ajuste'] = novo_ajuste
+                st.session_state.livros[idx]['ajuste'] = novo_val
                 
-                # Alertas e Avisos de Cor abaixo do Slider
-                if novo_ajuste < 5.0:
+                # Alertas baseados no valor atualizado
+                if novo_val < 5.0:
                     st.error("⚠️ ATENÇÃO: Lombada muito fina (abaixo de 5mm). Use etiqueta de capa!")
                 else:
                     st.success("✅ Espessura ideal para etiqueta de lombada.")
@@ -110,23 +109,14 @@ elif st.session_state.tela == "calibragem":
             with col_3d:
                 st.subheader("🔍 Visualização 3D")
                 
-                # Cores de Aviso na borda do modelo 3D
-                cor_aviso = "border: 5px solid #EF4444;" if l['ajuste'] < 5.0 else "border: 5px solid #22C55E;"
-                esp_3d = max(l['ajuste'] * 6, 60)
+                # Cores e cálculo do 3D usando o valor em tempo real do slider
+                val_atual = st.session_state.livros[idx]['ajuste']
+                cor_aviso = "border: 5px solid #EF4444;" if val_atual < 5.0 else "border: 5px solid #22C55E;"
+                esp_3d = max(val_atual * 6, 60)
                 
                 st.markdown(f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
-                    <div style="width: {esp_3d}px; height: 280px; background: #A084E8; {cor_aviso} transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; color: white; font-size: 11px;"></div>
+                    <div style="width: {esp_3d}px; height: 280px; background: #A084E8; {cor_aviso} transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4);"></div>
                     <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px;">CAPA</div>
                 </div>
                 """, unsafe_allow_html=True)
-        
-        # Alertas e Slider
-        if l['ajuste'] < 5.0:
-            st.error("⚠️ ATENÇÃO: Lombada muito fina (abaixo de 5mm). Use etiqueta de capa!")
-        else:
-            st.success("✅ Espessura ideal para etiqueta de lombada.")
-            
-        st.session_state.livros[st.session_state.livro_ativo]['ajuste'] = st.slider(
-            "Ajustar largura (mm)", 1.0, 50.0, float(l['ajuste']), 0.5
-        )
