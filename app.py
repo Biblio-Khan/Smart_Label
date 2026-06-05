@@ -97,8 +97,8 @@ elif st.session_state.tela == "calibragem":
     if not st.session_state.livros:
         st.warning("Nenhum livro cadastrado.")
     else:
-        # ESTANTE
-        st.markdown("<div style='display: flex; flex-wrap: wrap; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 50px; min-height: 250px; background-color: #f9f9f9; border-radius: 10px;'>", unsafe_allow_html=True)
+        # ESTANTE COESIVA COM AS ETIQUETAS VISÍVEIS NOS LIVROS
+        st.markdown("<div style='display: flex; flex-wrap: wrap; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 50px; min-height: 270px; background-color: #f9f9f9; border-radius: 10px;'>", unsafe_allow_html=True)
         
         for i, livro in enumerate(st.session_state.livros):
             largura = max(livro.get('ajuste', 15.0) * 3, 50)
@@ -108,18 +108,29 @@ elif st.session_state.tela == "calibragem":
                 st.session_state.mostrar_3d = True
                 st.rerun()
             
+            # Renderização do Livro na Estante contendo a etiqueta real na parte inferior
             st.markdown(f"""
-            <div style="width: {largura}px; height: 180px; background: #A084E8; border-radius: 2px; 
-            display: flex; align-items: center; justify-content: center; color: white; 
-            writing-mode: vertical-rl; font-size: 14px; box-shadow: 5px 5px 10px rgba(0,0,0,0.3);">
-            {livro.get('titulo', 'Livro')}
+            <div style="width: {largura}px; height: 200px; background: #A084E8; border-radius: 2px; 
+            display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; 
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.3); position: relative; overflow: hidden; padding-top: 10px;">
+                
+                <div style="writing-mode: vertical-rl; font-size: 11px; max-height: 110px; overflow: hidden; text-align: center; font-weight: bold;">
+                    {livro.get('titulo', 'Livro')}
+                </div>
+                
+                <div style="width: 100%; height: 55px; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 9px; color: black; border-top: 1px solid #ccc; line-height: 1.1; padding: 2px;">
+                    <div style="font-weight: bold; font-size: 9px; text-align: center; width: 100%; word-wrap: break-word;">{livro.get('cdd', '')}</div>
+                    <div style="font-size: 8px; transform: scale(0.9); margin-top: 1px;">{livro.get('ed', '')}</div>
+                    <div style="font-size: 8px; transform: scale(0.9);">{livro.get('ex', '')}</div>
+                </div>
+                
             </div>
             """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         
         st.write(" ")
         
-        # INTERFACE INFERIOR
+        # INTERFACE INFERIOR LADO A LADO
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
             livro_sel = st.session_state.livros[idx]
@@ -156,7 +167,6 @@ elif st.session_state.tela == "calibragem":
                 cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
                 esp_3d = max(val_atual * 6, 60)
                 
-                # Montagem do HTML corrigida
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
                     <div style="width: {esp_3d}px; height: 280px; background: #A084E8; border: 5px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
@@ -170,3 +180,4 @@ elif st.session_state.tela == "calibragem":
                 </div>
                 """
                 st.markdown(html_renderizado, unsafe_allow_html=True)
+
