@@ -26,23 +26,51 @@ if st.session_state.tela == "entrada":
     with col1:
         st.subheader("Cadastro Manual")
         with st.form("manual"):
-            titulo = st.text_input("Título")
-            cdd = st.text_input("CDD")
-            paginas = st.number_input("Páginas", min_value=1, value=100)
+            titulo = st.text_input("Título *")
+            classificacao = st.text_input("Classificação *")
+            
+            c1, c2 = st.columns(2)
+            paginas = c1.number_input("Páginas", min_value=1, value=100)
+            dimensao = c2.text_input("Dimensão (ex: 23 cm)")
+            
+            c3, c4 = st.columns(2)
+            edicao = c3.text_input("Edição", value="1.ed.")
+            exemplar = c4.text_input("Exemplar", value="Ex.1")
+            
             if st.form_submit_button("Adicionar à Lista"):
-                ajuste = (paginas / 2) * 0.1 + 2.0
-                st.session_state.livros.append({"titulo": titulo, "cdd": cdd, "ajuste": min(ajuste, 50.0)})
-                st.success("Adicionado!")
+                if titulo and classificacao:
+                    ajuste = (paginas / 2) * 0.1 + 2.0
+                    st.session_state.livros.append({
+                        "titulo": titulo, 
+                        "cdd": classificacao, 
+                        "paginas": str(paginas),
+                        "dimensao": dimensao,
+                        "ed": edicao,
+                        "ex": exemplar,
+                        "ajuste": min(ajuste, 50.0)
+                    })
+                    st.success(f"'{titulo}' adicionado!")
+                else:
+                    st.error("Por favor, preencha Título e Classificação.")
     
     with col2:
         st.subheader("Importar via CSV")
+        st.info("O CSV deve conter: titulo, cdd, paginas, dimensao, ed, ex")
         file = st.file_uploader("Subir arquivo CSV", type=["csv"])
         if file:
             df = pd.read_csv(file)
             for _, row in df.iterrows():
-                ajuste = (row['paginas'] / 2) * 0.1 + 2.0
-                st.session_state.livros.append({"titulo": row['titulo'], "cdd": row['cdd'], "ajuste": min(ajuste, 50.0)})
-            st.success("Dados importados!")
+                ajuste = (int(row.get('paginas', 100)) / 2) * 0.1 + 2.0
+                st.session_state.livros.append({
+                    "titulo": str(row.get('titulo', '')), 
+                    "cdd": str(row.get('cdd', '')), 
+                    "paginas": str(row.get('paginas', '')),
+                    "dimensao": str(row.get('dimensao', '')),
+                    "ed": str(row.get('ed', '1.ed.')),
+                    "ex": str(row.get('ex', 'Ex.1')),
+                    "ajuste": min(ajuste, 50.0)
+                })
+            st.success("Dados importados com sucesso!")
 
     if st.button("Ir para Estante de Calibragem ➡️", type="primary"):
         mudar_tela("calibragem")
@@ -88,15 +116,24 @@ elif st.session_state.tela == "calibragem":
         # INTERFACE INFERIOR LADO A LADO
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
+            livro_sel = st.session_state.livros[idx]
             
             col_ajustes, col_3d = st.columns([1.2, 1])
             
             with col_ajustes:
-                st.subheader(f"⚙️ Ajustar: {st.session_state.livros[idx]['titulo']}")
+                st.subheader(f"⚙️ Ajustar: {livro_sel['titulo']}")
+                
+                # Exibição dos dados técnicos salvos
+                st.markdown(f"""
+                **Dados do Livro:**
+                * **Classificação:** {livro_sel['cdd']}
+                * **Páginas:** {livro_sel['paginas']} pág.
+                * **Dimensão:** {livro_sel['dimensao'] if livro_sel['dimensao'] else 'Não informada'}
+                """)
                 
                 # O Slider altera o valor diretamente no session_state
                 novo_val = st.slider(
-                    "Largura da Lombada (mm)", 1.0, 50.0, float(st.session_state.livros[idx]['ajuste']), 0.5, key="slider_lombada"
+                    "Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel['ajuste']), 0.5, key="slider_lombada"
                 )
                 st.session_state.livros[idx]['ajuste'] = novo_val
                 
@@ -107,16 +144,26 @@ elif st.session_state.tela == "calibragem":
                     st.success("✅ Espessura ideal para etiqueta de lombada.")
             
             with col_3d:
-                st.subheader("🔍 Visualização 3D")
+                st.subheader("🔍 Visualização 3D da Etiqueta")
                 
-                # Cores e cálculo do 3D usando o valor em tempo real do slider
                 val_atual = st.session_state.livros[idx]['ajuste']
                 cor_aviso = "border: 5px solid #EF4444;" if val_atual < 5.0 else "border: 5px solid #22C55E;"
                 esp_3d = max(val_atual * 6, 60)
                 
+                # Interface 3D Renderizando a Etiqueta de Lombada real com os dados digitados
                 st.markdown(f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
-                    <div style="width: {esp_3d}px; height: 280px; background: #A084E8; {cor_aviso} transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4);"></div>
-                    <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px;">CAPA</div>
+                    
+                    <div style="width: {esp_3d}px; height: 280px; background: #A084E8; {cor_aviso} transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
+                        
+                        <div style="width: 100%; height: 95px; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 11px; color: black; border-top: 1px solid #ccc; padding: 2px; line-height: 1.2; overflow: hidden;">
+                            <div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%; word-wrap: break-word;">{livro_sel['cdd']}</div>
+                            <div style="text-align: center; font-size: 10px; margin-top: 3px;">{livro_sel['ed']}</div>
+                            <div style="text-align: center; font-size: 10px;">{livro_sel['ex']}</div>
+                        </div>
+                        
+                    </div>
+                    
+                    <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px; font-weight: bold;">CAPA</div>
                 </div>
                 """, unsafe_allow_html=True)
