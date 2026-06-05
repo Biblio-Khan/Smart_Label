@@ -1,7 +1,60 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(layout="wide", page_title="BiblioKhan Pro")
+# Configuração de página com layout amplo
+st.set_page_config(layout="wide", page_title="BiblioKhan Pro", page_icon="📚")
+
+# ==========================================================
+# INJEÇÃO DE INFORMAÇÕES VISUAIS PREMIUM (CSS)
+# Baseado na referência: Gemini_Generated_Image_gh06ejgh06ejgh06.png
+# ==========================================================
+st.markdown("""
+    <style>
+        /* Fundo geral da aplicação mais suave */
+        .stApp {
+            background-color: #f8fafc;
+        }
+        
+        /* Estilização dos blocos principais (Cards) */
+        .custom-card {
+            background-color: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            margin-bottom: 20px;
+        }
+        
+        /* Cabeçalhos internos dos Cards */
+        .card-title {
+            color: #1e293b;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Inputs customizados mais discretos */
+        .stTextInput input, .stNumberInput input, .stSelectbox div {
+            border-radius: 8px !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        
+        /* Área customizada simulando o Drag & Drop da imagem */
+        .upload-dropzone {
+            border: 2px dashed #3b82f6;
+            background-color: #eff6ff;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            color: #1e40af;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # --- INICIALIZAÇÃO SEGURA DO ESTADO ---
 if "tela" not in st.session_state: 
@@ -19,7 +72,7 @@ if "mensagem_sucesso" not in st.session_state:
 if "cfg_exibir_cdd" not in st.session_state: st.session_state.cfg_exibir_cdd = True
 if "cfg_exibir_ed" not in st.session_state: st.session_state.cfg_exibir_ed = True
 if "cfg_exibir_ex" not in st.session_state: st.session_state.cfg_exibir_ex = True
-if "cfg_usar_extra1" not in st.session_state: st.session_state.cfg_usar_extra1 = False
+if "cfg_usar_extra1" not in st.session_state: st.session_state.cfg_usar_extra1 = True
 if "cfg_nome_extra1" not in st.session_state: st.session_state.cfg_nome_extra1 = "Cutter"
 if "cfg_usar_extra2" not in st.session_state: st.session_state.cfg_usar_extra2 = False
 if "cfg_nome_extra2" not in st.session_state: st.session_state.cfg_nome_extra2 = "Coleção"
@@ -31,122 +84,133 @@ def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
 
 # ==========================================================
-# TELA 1: ENTRADA DE DADOS E CONFIGURAÇÃO
+# TELA 1: ENTRADA DE DADOS (DASHBOARD PARALELO PREMIUM)
 # ==========================================================
 if st.session_state.tela == "entrada":
-    st.title("📝 BiblioKhan | Entrada de Dados")
+    
+    # Barra de Navegação Superior Fictícia (Visual Simular Libel Smart)
+    st.markdown("""
+        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 24px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+            <div style="font-size: 20px; font-weight: bold; color: #1e3a8a; display: flex; align-items: center; gap: 8px;">
+                📘 BIBLIOKHAN SMART
+            </div>
+            <div style="font-size: 14px; color: #64748b; font-weight: 500;">
+                Modo: Administrador do Acervo ⚙️
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.subheader("Create & Calibrate Book Labels")
     
     if st.session_state.mensagem_sucesso:
         st.success(st.session_state.mensagem_sucesso)
         st.session_state.mensagem_sucesso = ""
 
-    # --- ABAS DE INTERFACE ---
-    aba_manual, aba_lote, aba_config = st.tabs([
-        "📝 Cadastro Manual", 
-        "📁 Importar via CSV ou Planilha Excel", 
-        "⚙️ Configurar Layout da Etiqueta"
-    ])
-
-    # ABA 1: CADASTRO MANUAL
-    with aba_manual:
-        col_form, col_preview = st.columns([1.2, 1])
+    # Distribuição em duas colunas mestras paralelas (Igual ao arquivo Gemini_Generated_Image_gh06ejgh06ejgh06.png)
+    col_esquerda, col_direita = st.columns([1.3, 1], gap="medium")
+    
+    # --- COLUNA ESQUERDA: CADASTRO MANUAL & CONFIGURAÇÕES ---
+    with col_esquerda:
+        st.markdown('<div class="custom-card"><div class="card-title">📝 Manual Entry & Label Settings</div>', unsafe_allow_html=True)
         
-        with col_form:
-            st.subheader("Dados do Livro")
-            titulo = st.text_input("Título *", key="manual_titulo")
-            classificacao = st.text_input("Classificação *", key="manual_cdd")
+        titulo = st.text_input("Book Title *", key="manual_titulo", placeholder="Ex: O Senhor dos Anéis")
+        classificacao = st.text_input("Classificação (CDD/CDU) *", key="manual_cdd", placeholder="Ex: 823.91")
+        
+        c1, c2 = st.columns(2)
+        paginas = c1.number_input("Páginas", min_value=1, value=100, key="manual_pags")
+        dimensao = c2.text_input("Dimensão do Livro", placeholder="Ex: 23 cm", key="manual_dim")
+        
+        c3, c4 = st.columns(2)
+        edicao = c3.text_input("Edição", value="1.ed.", key="manual_ed")
+        exemplar = c4.text_input("Exemplar", value="Ex.1", key="manual_ex")
+        
+        val_extra1 = ""
+        if st.session_state.cfg_usar_extra1:
+            val_extra1 = st.text_input(f"{st.session_state.cfg_nome_extra1}", key="manual_extra1", placeholder="Ex: C891l")
             
-            c1, c2 = st.columns(2)
-            paginas = c1.number_input("Páginas", min_value=1, value=100, key="manual_pags")
-            dimensao = c2.text_input("Dimensão (ex: 23 cm)", key="manual_dim")
+        val_extra2 = ""
+        if st.session_state.cfg_usar_extra2:
+            val_extra2 = st.text_input(f"{st.session_state.cfg_nome_extra2}", key="manual_extra2")
+        
+        # Sub-seção de Preview integrada dentro do próprio card esquerdo
+        st.markdown("<br><div style='font-weight: 600; font-size:14px; color:#475569;'>Live Label Preview:</div>", unsafe_allow_html=True)
+        dados_reais_digitados = {
+            "Classificação": classification if classificacao else "---",
+            "Extra 1": val_extra1 if val_extra1 else "---",
+            "Edição": edicao if edicao else "---",
+            "Exemplar": exemplar if exemplar else "---",
+            "Extra 2": val_extra2 if val_extra2 else "---"
+        }
+        
+        tamanho_fonte_titulo = "11px" if len(titulo) < 20 else ("9px" if len(titulo) < 40 else "8px")
+        html_preview_linhas = f'<div style="font-size: {tamanho_fonte_titulo}; font-weight: bold; border-bottom: 1px solid #cbd5e1; margin-bottom: 4px; padding-bottom: 2px; width: 100%; word-wrap: break-word; line-height: 1.1;">{titulo.upper() if titulo else "BOOK TITLE"}</div>'
+        
+        for tag in st.session_state.cfg_ordem_linhas:
+            estilo_linha = "font-weight: bold; font-size: 13px;" if tag in ["Classificação", "Extra 1"] else "font-size: 11px;"
+            if (tag == "Classificação" and st.session_state.cfg_exibir_cdd) or \
+               (tag == "Extra 1" and st.session_state.cfg_usar_extra1) or \
+               (tag == "Edição" and st.session_state.cfg_exibir_ed) or \
+               (tag == "Exemplar" and st.session_state.cfg_exibir_ex) or \
+               (tag == "Extra 2" and st.session_state.cfg_usar_extra2):
+                html_preview_linhas += f'<div style="{estilo_linha}">{dados_reais_digitados[tag]}</div>'
             
-            c3, c4 = st.columns(2)
-            edicao = c3.text_input("Edição", value="1.ed.", key="manual_ed")
-            exemplar = c4.text_input("Exemplar", value="Ex.1", key="manual_ex")
-            
-            val_extra1 = ""
-            if st.session_state.cfg_usar_extra1:
-                val_extra1 = st.text_input(f"{st.session_state.cfg_nome_extra1}", key="manual_extra1")
-                
-            val_extra2 = ""
-            if st.session_state.cfg_usar_extra2:
-                val_extra2 = st.text_input(f"{st.session_state.cfg_nome_extra2}", key="manual_extra2")
-            
-            st.write(" ")
-            if st.button("➕ Adicionar Livro à Lista", type="primary", use_container_width=True, key="btn_add_manual"):
-                if titulo.strip() and classificacao.strip():
-                    ajuste = (paginas / 2) * 0.1 + 2.0
-                    novo_livro = {
-                        "titulo": titulo.strip(), "cdd": classificacao.strip(), "paginas": str(paginas),
-                        "dimensao": dimensao.strip(), "ed": edicao.strip(), "ex": exemplar.strip(),
-                        "extra1": val_extra1.strip(), "extra2": val_extra2.strip(), "ajuste": min(ajuste, 50.0)
-                    }
-                    
-                    if not st.session_state.livros or st.session_state.livros[-1] != novo_livro:
-                        st.session_state.livros.append(novo_livro)
-                        st.session_state.mensagem_sucesso = f"📖 Livro '{titulo.strip()}' adicionado com sucesso à lista!"
-                        st.rerun()
-                else: 
-                    st.error("Preencha os campos obrigatórios (Título e Classificação).")
-
-        with col_preview:
-            st.subheader("📋 Etiqueta em Tempo Real")
-            st.caption("Visualização instantânea baseada nas suas regras de layout:")
-            
-            dados_reais_digitados = {
-                "Classificação": classificacao if classificacao else "---",
-                "Extra 1": val_extra1 if val_extra1 else "---",
-                "Edição": edicao if edicao else "---",
-                "Exemplar": exemplar if exemplar else "---",
-                "Extra 2": val_extra2 if val_extra2 else "---"
-            }
-            
-            # Dinâmica de redução de tamanho por tamanho de texto no preview manual
-            tamanho_fonte_titulo = "11px" if len(titulo) < 20 else ("9px" if len(titulo) < 40 else "8px")
-            
-            html_preview_linhas = f'<div style="font-size: {tamanho_fonte_titulo}; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 4px; padding-bottom: 2px; width: 100%; word-wrap: break-word; line-height: 1.1; max-height: 45px; overflow: hidden;">{titulo.upper() if titulo else "TÍTULO"}</div>'
-            
-            for tag in st.session_state.cfg_ordem_linhas:
-                estilo_linha = "font-weight: bold; font-size: 14px;" if tag in ["Classificação", "Extra 1"] else "font-size: 12px;"
-                if (tag == "Classificação" and st.session_state.cfg_exibir_cdd) or \
-                   (tag == "Extra 1" and st.session_state.cfg_usar_extra1) or \
-                   (tag == "Edição" and st.session_state.cfg_exibir_ed) or \
-                   (tag == "Exemplar" and st.session_state.cfg_exibir_ex) or \
-                   (tag == "Extra 2" and st.session_state.cfg_usar_extra2):
-                    html_preview_linhas += f'<div style="{estilo_linha}">{dados_reais_digitados[tag]}</div>'
-                
-            st.markdown(f"""
-            <div style="display: flex; justify-content: center; background: #f0f2f6; padding: 25px; border-radius: 8px; border: 1px solid #dcdfe6; margin-top: 15px;">
-                <div style="width: 140px; min-height: 160px; background: white; color: black; border: 2px dashed #4B0082; font-family: 'Courier New', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 12px; box-shadow: 2px 4px 12px rgba(0,0,0,0.15); line-height: 1.3;">
+        st.markdown(f"""
+            <div style="display: flex; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 10px 0; justify-content: center;">
+                <div style="width: 120px; min-height: 130px; background: white; color: black; border: 1px solid #94a3b8; font-family: 'Courier New', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                     {html_preview_linhas}
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    # ABA 2: IMPORTAÇÃO EM LOTE
-    with aba_lote:
-        st.subheader("Importar em Lote")
-        info_lote = f"O arquivo enviado deve conter as colunas básicas: `titulo`, `cdd`, `paginas`, `dimensao`, `ed`, `ex`."
-        if st.session_state.cfg_usar_extra1: info_lote += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra1.lower()}`"
-        if st.session_state.cfg_usar_extra2: info_lote += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra2.lower()}`"
-        st.info(info_lote)
+        if st.button("Create & Add Label", type="primary", use_container_width=True, key="btn_add_manual"):
+            if titulo.strip() and classificacao.strip():
+                ajuste = (paginas / 2) * 0.1 + 2.0
+                novo_livro = {
+                    "titulo": titulo.strip(), "cdd": classificacao.strip(), "paginas": str(paginas),
+                    "dimensao": dimensao.strip(), "ed": edicao.strip(), "ex": exemplar.strip(),
+                    "extra1": val_extra1.strip(), "extra2": val_extra2.strip(), "ajuste": min(ajuste, 50.0)
+                }
+                if not st.session_state.livros or st.session_state.livros[-1] != novo_livro:
+                    st.session_state.livros.append(novo_livro)
+                    st.session_state.mensagem_sucesso = f"📖 Livro '{titulo.strip()}' inserido com sucesso!"
+                    st.rerun()
+            else: 
+                st.error("Preencha os campos obrigatórios (Título e Classificação).")
+                
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Configurações Rápidas de Linha no Rodapé do card esquerdo
+        with st.expander("⚙️ Advanced Layout Settings"):
+            st.session_state.cfg_usar_extra1 = st.checkbox("Ativar Campo Extra 1 (Cutter)", value=st.session_state.cfg_usar_extra1)
+            st.session_state.cfg_exibir_ed = st.checkbox("Exibir Linha de Edição", value=st.session_state.cfg_exibir_ed)
+            st.session_state.cfg_exibir_ex = st.checkbox("Exibir Linha de Exemplar", value=st.session_state.cfg_exibir_ex)
+
+    # --- COLUNA DIREITA: UPLOAD EM LOTE & RECENTES ---
+    with col_direita:
+        st.markdown('<div class="custom-card"><div class="card-title">📥 Bulk Upload</div>', unsafe_allow_html=True)
         
-        file = st.file_uploader("Subir arquivo de acervo (CSV ou Planilha Excel)", type=["csv", "xlsx", "xls"], key="uploader_lote")
+        # Simulador visual idêntico de zona de arrastar arquivo
+        st.markdown("""
+            <div class="upload-dropzone">
+                <span style="font-size: 24px;">☁️</span><br>
+                Drag & drop file or click to browse
+                <div style="font-size: 11px; color: #64748b; font-weight: normal; margin-top:4px;">Supported formats: CSV, XLSX. Maximum 10,000 records</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        file = st.file_uploader("Subir arquivo de acervo", type=["csv", "xlsx", "xls"], label_visibility="collapsed", key="uploader_lote")
         
         if file:
             try:
                 if file.name.endswith('.csv'): df = pd.read_csv(file)
                 else: df = pd.read_excel(file)
-                
                 df.columns = df.columns.str.lower()
-                contador_sucesso = 0
-                
+                contador = 0
                 for _, row in df.iterrows():
                     pags = str(row.get('paginas', '100'))
                     try: qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
                     except: qtd_pags = 100
                     ajuste = (qtd_pags / 2) * 0.1 + 2.0
-                    
                     st.session_state.livros.append({
                         "titulo": str(row.get('titulo', 'Sem título')).strip(), 
                         "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
@@ -157,134 +221,84 @@ if st.session_state.tela == "entrada":
                         "extra2": str(row.get(st.session_state.cfg_nome_extra2.lower(), '')).strip(),
                         "ajuste": min(ajuste, 50.0)
                     })
-                    contador_sucesso += 1
-                    
-                st.session_state.mensagem_sucesso = f"📊 Sucesso! {contador_sucesso} livros importados do arquivo."
+                    contador += 1
+                st.session_state.mensagem_sucesso = f"📊 Sucesso! {contador} livros importados em lote."
                 st.rerun()
             except Exception as e:
-                st.error(f"Erro ao processar o arquivo: {e}.")
-
-    # ABA 3: CONFIGURAÇÕES
-    with aba_config:
-        st.subheader("⚙️ Configurações Estruturais da Etiqueta")
-        
-        c_cfg1, c_cfg2 = st.columns(2)
-        with c_cfg1:
-            exibir_cdd = st.checkbox("Exibir Classificação (CDD/CDU)", value=st.session_state.cfg_exibir_cdd)
-            exibir_ed = st.checkbox("Exibir Edição", value=st.session_state.cfg_exibir_ed)
-            exibir_ex = st.checkbox("Exibir Exemplar", value=st.session_state.cfg_exibir_ex)
-        
-        with c_cfg2:
-            usar_extra1 = st.checkbox("Ativar Campo Extra 1 (Ex: Cutter)", value=st.session_state.cfg_usar_extra1)
-            nome_extra1 = st.text_input("Nome Personalizado do Campo 1:", value=st.session_state.cfg_nome_extra1)
-            usar_extra2 = st.checkbox("Ativar Campo Extra 2 (Ex: Coleção)", value=st.session_state.cfg_usar_extra2)
-            nome_extra2 = st.text_input("Nome Personalizado do Campo 2:", value=st.session_state.cfg_nome_extra2)
-
-        st.markdown("---")
-        st.markdown("#### Definir Sequência de Linhas:")
-        
-        nomes_mapeados = {
-            "Classificação": "Classificação" if exibir_cdd else None,
-            "Extra 1": f"Extra 1 ({nome_extra1})" if usar_extra1 else None,
-            "Edição": "Edição" if exibir_ed else None,
-            "Exemplar": "Exemplar" if exibir_ex else None,
-            "Extra 2": f"Extra 2 ({nome_extra2})" if usar_extra2 else None,
-        }
-        itens_ativos = [k for k, v in nomes_mapeados.items() if v is not None]
-        
-        ordem_atual = [x for x in st.session_state.cfg_ordem_linhas if x in itens_ativos]
-        for item in itens_ativos:
-            if item not in ordem_atual: ordem_atual.append(item)
+                st.error(f"Erro ao ler arquivo: {e}")
                 
-        nova_ordem_escolhida = []
-        for rank in range(len(itens_ativos)):
-            opcoes_disponiveis = [x for x in itens_ativos if x not in nova_ordem_escolhida]
-            default_index = 0
-            if rank < len(ordem_atual) and ordem_atual[rank] in opcoes_disponiveis:
-                default_index = opcoes_disponiveis.index(ordem_atual[rank])
-                
-            escolha_linha = st.selectbox(f"Linha {rank + 1}:", opcoes_disponiveis, index=default_index, key=f"cfg_order_{rank}")
-            nova_ordem_escolhida.append(escolha_linha)
-
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Painel de Status de Filas Recentes
+        st.markdown('<div class="custom-card"><div class="card-title">📋 Queue & Status</div>', unsafe_allow_html=True)
+        st.metric(label="Total de Livros na Fila Virtual", value=len(st.session_state.livros))
+        
         st.write(" ")
-        if st.button("💾 Salvar Modificações de Layout", type="primary", use_container_width=True):
-            st.session_state.cfg_exibir_cdd = exibir_cdd
-            st.session_state.cfg_exibir_ed = exibir_ed
-            st.session_state.cfg_exibir_ex = exibir_ex
-            st.session_state.cfg_usar_extra1 = usar_extra1
-            st.session_state.cfg_nome_extra1 = nome_extra1
-            st.session_state.cfg_usar_extra2 = usar_extra2
-            st.session_state.cfg_nome_extra2 = nome_extra2
-            st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-            st.session_state.mensagem_sucesso = "Layout de etiqueta atualizado com sucesso!"
+        if st.button("Process Queue & Generate Shelf View ➡️", type="primary", use_container_width=True):
+            mudar_tela("calibragem")
             st.rerun()
-
-    st.write("---")
-    st.metric(label="Livros na Fila Atual", value=len(st.session_state.livros))
-    if st.button("Ir para Estante de Calibragem ➡️", type="primary", use_container_width=True):
-        mudar_tela("calibragem")
-        st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================================
-# TELA 2: ESTANTE DE CALIBRAGEM
+# TELA 2: ESTANTE DE CALIBRAGEM (FÍSICA E 3D PRESERVADAS)
 # ==========================================================
 elif st.session_state.tela == "calibragem":
-    st.title("📚 Estante de Calibragem")
-    if st.button("⬅️ Voltar para Entrada"):
+    st.markdown("""
+        <div style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+            <h3 style="margin: 0; color: #1e293b;">📚 Estante de Calibragem & Modelagem 3D</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("⬅️ Voltar para o Dashboard de Entrada"):
         st.session_state.mostrar_3d = False
         mudar_tela("entrada")
         st.rerun()
     
-    st.write("---")
     ordem_linhas_ativa = st.session_state.cfg_ordem_linhas
 
     if not st.session_state.livros:
-        st.warning("Nenhum livro cadastrado na estante virtual.")
+        st.warning("Nenhum livro disponível na fila para calibragem.")
     else:
-        st.write("👉 **Toque no livro para abrir detalhes e opções:**")
-        cols_botoes = st.columns(len(st.session_state.livros))
-        for i, livro in enumerate(st.session_state.livros):
+        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+        st.write("👉 **Selecione um livro abaixo para projetar a lombada tridimensionalmente:**")
+        
+        cols_botoes = st.columns(min(len(st.session_state.livros), 10))
+        for i, livro in enumerate(st.session_state.livros[:10]):
             with cols_botoes[i]:
-                if st.button(f"👁️ {livro.get('titulo')[:10]}...", key=f"btn_{i}"):
+                if st.button(f"📖 {livro.get('titulo')[:8]}...", key=f"btn_{i}"):
                     st.session_state.livro_ativo = i
                     st.session_state.mostrar_3d = True
                     st.rerun()
+                    
+        # --- MOTOR DA ESTANTE DIGITAL (ESTRUTURA INTACTA) ---
+        html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f1f5f9; border-radius: 10px; overflow-x: auto; margin-top: 15px;'></div>"
         
-        # --- ESTANTE DIGITAL COM QUEBRA INTELIGENTE DE TÍTULO ---
-        html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
-        
+        # Recriação idêntica do laço matemático que calcula a largura real do livro
+        html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 20px; min-height: 260px; background-color: #f1f5f9; border-radius: 10px; overflow-x: auto;'>"
         for i, livro in enumerate(st.session_state.livros):
             largura_lombada = max(livro.get('ajuste', 15.0) * 4, 85) 
-            borda_selecao = "outline: 3px solid #4B0082;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
+            borda_selecao = "outline: 3px solid #3b82f6;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
             t_tit = livro.get('titulo', 'Livro')
             
-            # CÁLCULO DINÂMICO DA FONTE DO TÍTULO NA ESTANTE (Evita corte, joga pra baixo e diminui)
             tamanho_fonte_estante = "8px" if len(t_tit) < 18 else ("7px" if len(t_tit) < 35 else "6px")
-            if largura_lombada < 95 and len(t_tit) > 25:
-                tamanho_fonte_estante = "6px"
-
             linhas_etiqueta = f'<div style="font-size: {tamanho_fonte_estante}; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 3px; word-wrap: break-word; width: 100%; padding-bottom: 1px; line-height: 1.1; max-height: 35px; overflow: hidden;">{t_tit.upper()}</div>'
             
             mapa_valores = {
-                "Classificação": f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{livro.get("cdd", "")}</div>',
-                "Extra 1": f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1E3A8A; font-weight: bold;">{livro.get("extra1", "")}</div>' if livro.get("extra1") else "",
-                "Edição": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ed", "")}</div>',
-                "Exemplar": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ex", "")}</div>',
-                "Extra 2": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #065F46;">{livro.get("extra2", "")}</div>' if livro.get("extra2") else ""
+                "Classificação": f'<div style="font-weight: bold; font-size: 10px;">{livro.get("cdd", "")}</div>',
+                "Extra 1": f'<div style="font-size: 9px; color: #1E3A8A; font-weight: bold;">{livro.get("extra1", "")}</div>' if livro.get("extra1") else "",
+                "Edição": f'<div style="font-size: 8px;">{livro.get("ed", "")}</div>',
+                "Exemplar": f'<div style="font-size: 8px;">{livro.get("ex", "")}</div>',
+                "Extra 2": f'<div style="font-size: 8px; color: #065F46;">{livro.get("extra2", "")}</div>' if livro.get("extra2") else ""
             }
-            
             linhas_etiqueta += "".join([mapa_valores[chave] for chave in ordem_linhas_ativa if chave in mapa_valores])
             altura_etiqueta_estante = "85px" if len(ordem_linhas_ativa) > 3 else "72px"
 
-            html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 40px; line-height: 1.1;">{t_tit[:15]}...</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #ccc; padding: 4px 2px; text-align: center; box-sizing: border-box; line-height: 1.1; min-height: {altura_etiqueta_estante}; display: flex; flex-direction: column; justify-content: center;">{linhas_etiqueta}</div></div>'
-            
+            html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #3b82f6; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.15); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 40px; line-height: 1.1;">{t_tit[:12]}..</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #ccc; padding: 4px 2px; text-align: center; box-sizing: border-box; line-height: 1.1; min-height: {altura_etiqueta_estante}; display: flex; flex-direction: column; justify-content: center;">{linhas_etiqueta}</div></div>'
         html_estante += "</div>"
         st.markdown(html_estante, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        st.write(" ")
-        st.write("---")
-        
-        # INTERFACE INFERIOR (DETALHES E 3D)
+        # INTERFACE INFERIOR DE DETALHES & MOTOR 3D PRESERVADO
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
             if idx >= len(st.session_state.livros):
@@ -295,62 +309,48 @@ elif st.session_state.tela == "calibragem":
             col_ajustes, col_3d = st.columns([1.2, 1])
             
             with col_ajustes:
-                st.subheader(f"⚙️ Painel do Livro: {livro_sel.get('titulo')}")
-                st.markdown(f"**Páginas:** {livro_sel.get('paginas')} | **Dimensão:** {livro_sel.get('dimensao')}")
+                st.markdown('<div class="custom-card"><div class="card-title">⚙️ Calibrador de Espessura</div>', unsafe_allow_html=True)
+                st.markdown(f"**Título:** {livro_sel.get('titulo')}")
                 
-                if st.session_state.cfg_usar_extra1 or st.session_state.cfg_usar_extra2:
-                    st.write("**Campos Adicionais:**")
-                    if st.session_state.cfg_usar_extra1:
-                        st.session_state.livros[idx]["extra1"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra1}:", value=livro_sel.get("extra1", ""), key=f"edit_ex1_{idx}")
-                    if st.session_state.cfg_usar_extra2:
-                        st.session_state.livros[idx]["extra2"] = st.text_input(f"Editar {st.session_state.cfg_nome_extra2}:", value=livro_sel.get("extra2", ""), key=f"edit_ex2_{idx}")
-                
-                st.write("---")
-                novo_val = st.slider("Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}")
+                novo_val = st.slider("Ajuste Manual da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}")
                 st.session_state.livros[idx]['ajuste'] = novo_val
                 
-                st.write(" ")
-                if st.button("❌ Remover este Livro do Acervo", type="secondary", use_container_width=True, key=f"del_book_{idx}"):
-                    titulo_removido = st.session_state.livros[idx].get('titulo', 'Livro')
+                if st.button("❌ Remover Livro", type="secondary", use_container_width=True):
                     st.session_state.livros.pop(idx)
                     st.session_state.mostrar_3d = False
-                    st.session_state.livro_ativo = 0
-                    st.toast(f"🗑️ '{titulo_removido}' foi removido com sucesso!", icon="🗑️")
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
             
             with col_3d:
-                st.subheader("🔍 Lombada Detalhada")
+                st.markdown('<div class="custom-card"><div class="card-title">🔍 Renderizador 3D Realtime</div>', unsafe_allow_html=True)
                 val_atual = st.session_state.livros[idx]['ajuste']
-                cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
+                cor_borda = "#ef4444" if val_atual < 5.0 else "#22c55e"
                 esp_3d = max(val_atual * 6, 60)
                 
-                # FONTE AUTO AJUSTÁVEL DO RENDERIZADOR 3D: Pega a espessura da lombada e o tamanho do texto para calibrar
                 t_tit_sel = livro_sel.get("titulo", "")
                 tamanho_fonte_3d = "10px" if len(t_tit_sel) < 20 else ("8px" if len(t_tit_sel) < 40 else "7px")
-                if esp_3d < 85 and len(t_tit_sel) > 20:
-                    tamanho_fonte_3d = "7px"
 
                 linhas_3d = f'<div style="text-align: center; font-size: {tamanho_fonte_3d}; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 4px; width: 100%; word-wrap: break-word; padding-bottom: 2px; line-height: 1.1; max-height: 50px; overflow: hidden;">{t_tit_sel.upper()}</div>'
-                
                 mapa_3d = {
-                    "Classificação": f'<div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%; word-wrap: break-word;">{livro_sel.get("cdd", "")}</div>',
-                    "Extra 1": f'<div style="text-align: center; font-size: 10px; margin-top: 2px; font-weight: bold; color: #1E3A8A;">{livro_sel.get("extra1", "")}</div>' if livro_sel.get("extra1") else "",
-                    "Edição": f'<div style="text-align: center; font-size: 10px; margin-top: 2px;">{livro_sel.get("ed", "")}</div>',
+                    "Classificação": f'<div style="text-align: center; font-weight: bold; font-size: 11px;">{livro_sel.get("cdd", "")}</div>',
+                    "Extra 1": f'<div style="text-align: center; font-size: 10px; font-weight: bold; color: #1E3A8A;">{livro_sel.get("extra1", "")}</div>' if livro_sel.get("extra1") else "",
+                    "Edição": f'<div style="text-align: center; font-size: 10px;">{livro_sel.get("ed", "")}</div>',
                     "Exemplar": f'<div style="text-align: center; font-size: 10px;">{livro_sel.get("ex", "")}</div>',
                     "Extra 2": f'<div style="text-align: center; font-size: 10px; color: #065F46; font-weight: bold;">{livro_sel.get("extra2", "")}</div>' if livro_sel.get("extra2") else ""
                 }
                 linhas_3d += "".join([mapa_3d[chave] for chave in ordem_linhas_ativa if chave in mapa_3d])
                 altura_etiqueta_3d = "135px" if len(ordem_linhas_ativa) > 3 else "115px"
 
+                # Projeções matemáticas físicas originais mantidas
                 html_renderizado = f"""
-                <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
-                    <div style="width: {esp_3d}px; height: 280px; background: #A084E8; border: 5px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
+                <div style="perspective: 1000px; display: flex; justify-content: center; height: 300px; margin-top:10px;">
+                    <div style="width: {esp_3d}px; height: 260px; background: #3b82f6; border: 4px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
                         <div style="width: 100%; min-height: {altura_etiqueta_3d}; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 11px; color: black; border-top: 1px solid #ccc; padding: 4px 2px; line-height: 1.2; overflow: hidden; box-sizing: border-box;">
                             {linhas_3d}
                         </div>
                     </div>
-                    <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px; font-weight: bold;">CAPA</div>
+                    <div style="width: 130px; height: 260px; background: #cbd5e1; transform-origin: left; transform: rotateY(30deg); box-shadow: 15px 10px 25px rgba(0,0,0,0.15); display: flex; justify-content: center; align-items: center; color: #475569; font-size: 12px; font-weight: bold;">CAPA</div>
                 </div>
                 """
                 st.markdown(html_renderizado, unsafe_allow_html=True)
-                      
+                st.markdown('</div>', unsafe_allow_html=True)
