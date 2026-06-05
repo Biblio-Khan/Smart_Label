@@ -29,175 +29,196 @@ def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
 
 # ==========================================================
-# TELA 1: ENTRADA DE DADOS & CONFIGURAÇÃO AVANÇADA
+# TELA 1: ENTRADA DE DADOS E CONFIGURAÇÃO
 # ==========================================================
 if st.session_state.tela == "entrada":
     st.title("📝 BiblioKhan | Entrada de Dados")
     
-    # Criamos as colunas principais primeiro para organizar o layout visual da tela
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Cadastro Manual")
+    # PAINEL DE CONFIGURAÇÃO DA SMART LABEL
+    with st.expander("⚙️ Configurar Padrão e Ordem da Etiqueta (Clique para abrir/fechar)", expanded=False):
+        st.markdown("### 1. Escolha as informações visíveis:")
+        c_cfg1, c_cfg2 = st.columns(2)
         
-        # DECLARAÇÃO DOS INPUTS FORA DO FORMULÁRIO (Para permitir atualização em tempo real na pré-visualização)
-        titulo = st.text_input("Título *", key="manual_titulo")
-        classificacao = st.text_input("Classificação *", key="manual_cdd")
+        with c_cfg1:
+            exibir_cdd = st.checkbox("Exibir Classificação (CDD/CDU)", value=st.session_state.cfg_exibir_cdd)
+            exibir_ed = st.checkbox("Exibir Edição", value=st.session_state.cfg_exibir_ed)
+            exibir_ex = st.checkbox("Exibir Exemplar", value=st.session_state.cfg_exibir_ex)
         
-        c1, c2 = st.columns(2)
-        paginas = c1.number_input("Páginas", min_value=1, value=100, key="manual_pags")
-        dimensao = c2.text_input("Dimensão (ex: 23 cm)", key="manual_dim")
+        with c_cfg2:
+            usar_extra1 = st.checkbox("Ativar Campo Extra 1 (Ex: Cutter)", value=st.session_state.cfg_usar_extra1)
+            nome_extra1 = st.text_input("Personalizar Nome do Campo 1:", value=st.session_state.cfg_nome_extra1, key="input_n_ext1")
+
+            usar_extra2 = st.checkbox("Ativar Campo Extra 2 (Ex: Coleção)", value=st.session_state.cfg_usar_extra2)
+            nome_extra2 = st.text_input("Personalizar Nome do Campo 2:", value=st.session_state.cfg_nome_extra2, key="input_n_ext2")
+
+        st.markdown("---")
+        st.markdown("### 2. Defina a Ordem de Cima para Baixo:")
         
-        c3, c4 = st.columns(2)
-        edicao = c3.text_input("Edição", value="1.ed.", key="manual_ed")
-        exemplar = c4.text_input("Exemplar", value="Ex.1", key="manual_ex")
-        
-        # PAINEL DE CONFIGURAÇÃO DA SMART LABEL (Colocado estrategicamente após os campos principais)
-        with st.expander("⚙️ Configurar Padrão e Ordem da Etiqueta", expanded=False):
-            st.markdown("### 1. Escolha as informações visíveis:")
-            c_cfg1, c_cfg2 = st.columns(2)
-            
-            with c_cfg1:
-                exibir_cdd = st.checkbox("Exibir Classificação (CDD/CDU)", value=st.session_state.cfg_exibir_cdd)
-                exibir_ed = st.checkbox("Exibir Edição", value=st.session_state.cfg_exibir_ed)
-                exibir_ex = st.checkbox("Exibir Exemplar", value=st.session_state.cfg_exibir_ex)
-            
-            with c_cfg2:
-                usar_extra1 = st.checkbox("Ativar Campo Extra 1 (Ex: Cutter)", value=st.session_state.cfg_usar_extra1)
-                nome_extra1 = st.text_input("Personalizar Nome do Campo 1:", value=st.session_state.cfg_nome_extra1, key="input_n_ext1")
-
-                usar_extra2 = st.checkbox("Ativar Campo Extra 2 (Ex: Coleção)", value=st.session_state.cfg_usar_extra2)
-                nome_extra2 = st.text_input("Personalizar Nome do Campo 2:", value=st.session_state.cfg_nome_extra2, key="input_n_ext2")
-
-            st.markdown("---")
-            st.markdown("### 2. Defina a Ordem de Cima para Baixo:")
-            
-            nomes_mapeados = {
-                "Classificação": "Classificação" if exibir_cdd else None,
-                "Extra 1": f"Extra 1 ({nome_extra1})" if usar_extra1 else None,
-                "Edição": "Edição" if exibir_ed else None,
-                "Exemplar": "Exemplar" if exibir_ex else None,
-                "Extra 2": f"Extra 2 ({nome_extra2})" if usar_extra2 else None,
-            }
-            itens_ativos = [k for k, v in nomes_mapeados.items() if v is not None]
-            
-            ordem_atual = [x for x in st.session_state.cfg_ordem_linhas if x in itens_ativos]
-            for item in itens_ativos:
-                if item not in ordem_atual:
-                    ordem_atual.append(item)
-                    
-            nova_ordem_escolhida = []
-            for rank in range(len(itens_ativos)):
-                opcoes_disponiveis = [x for x in itens_ativos if x not in nova_ordem_escolhida]
-                default_index = 0
-                if rank < len(ordem_atual) and ordem_atual[rank] in opcoes_disponiveis:
-                    default_index = opcoes_disponiveis.index(ordem_atual[rank])
-                    
-                escolha_linha = st.selectbox(f"Linha {rank + 1} da Etiqueta:", opcoes_disponiveis, index=default_index, key=f"ordem_row_{rank}")
-                nova_ordem_escolhida.append(escolha_linha)
-
-            if st.button("💾 Tornar este Layout Padrão", type="primary"):
-                st.session_state.cfg_exibir_cdd = exibir_cdd
-                st.session_state.cfg_exibir_ed = exibir_ed
-                st.session_state.cfg_exibir_ex = exibir_ex
-                st.session_state.cfg_usar_extra1 = usar_extra1
-                st.session_state.cfg_nome_extra1 = nome_extra1
-                st.session_state.cfg_usar_extra2 = usar_extra2
-                st.session_state.cfg_nome_extra2 = nome_extra2
-                st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-                st.success("Layout salvo como padrão!")
-
-        # Inputs dos campos extras aparecem dinamicamente se ativados lá em cima
-        val_extra1 = ""
-        if usar_extra1:
-            val_extra1 = st.text_input(f"{nome_extra1}", key="manual_extra1")
-            
-        val_extra2 = ""
-        if usar_extra2:
-            val_extra2 = st.text_input(f"{nome_extra2}", key="manual_extra2")
-
-        # --- NOVA PRÉ-VISUALIZAÇÃO EM TEMPO REAL COM OS SEUS DADOS ---
-        st.write(" ")
-        st.markdown("### 📋 Pré-visualização em Tempo Real:")
-        
-        # Montamos o dicionário mapeando direto para as variáveis que você está digitando na tela!
-        dados_reais_digitados = {
-            "Classificação": classificacao if classificacao else "---",
-            "Extra 1": val_extra1 if val_extra1 else "---",
-            "Edição": edicao if edicao else "---",
-            "Exemplar": exemplar if exemplar else "---",
-            "Extra 2": val_extra2 if val_extra2 else "---"
+        nomes_mapeados = {
+            "Classificação": "Classificação" if exibir_cdd else None,
+            "Extra 1": f"Extra 1 ({nome_extra1})" if usar_extra1 else None,
+            "Edição": "Edição" if exibir_ed else None,
+            "Exemplar": "Exemplar" if exibir_ex else None,
+            "Extra 2": f"Extra 2 ({nome_extra2})" if usar_extra2 else None,
         }
+        itens_ativos = [k for k, v in nomes_mapeados.items() if v is not None]
         
-        html_preview_linhas = ""
-        for tag in nova_ordem_escolhida:
-            estilo_linha = "font-weight: bold; font-size: 15px;" if tag in ["Classificação", "Extra 1"] else "font-size: 13px;"
-            # Só exibe na etiqueta se o respectivo toggle estiver ativo
-            if (tag == "Classificação" and exibir_cdd) or \
-               (tag == "Extra 1" and usar_extra1) or \
-               (tag == "Edição" and exibir_ed) or \
-               (tag == "Exemplar" and exibir_ex) or \
-               (tag == "Extra 2" and usar_extra2):
-                html_preview_linhas += f'<div style="{estilo_linha}">{dados_reais_digitados[tag]}</div>'
-            
-        st.markdown(f"""
-        <div style="display: flex; justify-content: center; background: #f0f2f6; padding: 15px; border-radius: 8px; border: 1px solid #dcdfe6;">
-            <div style="width: 130px; min-height: 140px; background: white; color: black; border: 2px dashed #909399; font-family: 'Courier New', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 10px; box-shadow: 2px 2px 8px rgba(0,0,0,0.08); line-height: 1.4;">
-                {html_preview_linhas}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.write(" ")
+        ordem_atual = [x for x in st.session_state.cfg_ordem_linhas if x in itens_ativos]
+        for item in itens_ativos:
+            if item not in ordem_atual:
+                ordem_atual.append(item)
+                
+        nova_ordem_escolhida = []
+        for rank in range(len(itens_ativos)):
+            opcoes_disponiveis = [x for x in itens_ativos if x not in nova_ordem_escolhida]
+            default_index = 0
+            if rank < len(ordem_atual) and ordem_atual[rank] in opcoes_disponiveis:
+                default_index = opcoes_disponiveis.index(ordem_atual[rank])
+                
+            escolha_linha = st.selectbox(f"Linha {rank + 1} da Etiqueta:", opcoes_disponiveis, index=default_index, key=f"ordem_row_{rank}")
+            nova_ordem_escolhida.append(escolha_linha)
 
-        # Botão de envio final isolado para processar a lista com segurança
-        if st.button("➕ Adicionar Livro à Lista", use_container_width=True):
-            if titulo and classificacao:
-                ajuste = (paginas / 2) * 0.1 + 2.0
-                st.session_state.livros.append({
-                    "titulo": titulo.strip(), "cdd": classificacao.strip(), "paginas": str(paginas),
-                    "dimensao": dimensao.strip(), "ed": edicao.strip(), "ex": exemplar.strip(),
-                    "extra1": val_extra1.strip(), "extra2": val_extra2.strip(), "ajuste": min(ajuste, 50.0)
-                })
-                # Sincroniza o estado global das escolhas de design
-                st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-                st.session_state.cfg_exibir_cdd = exibir_cdd
-                st.session_state.cfg_exibir_ed = exibir_ed
-                st.session_state.cfg_exibir_ex = exibir_ex
-                st.session_state.cfg_usar_extra1 = usar_extra1
-                st.session_state.cfg_nome_extra1 = nome_extra1
-                st.session_state.cfg_usar_extra2 = usar_extra2
-                st.session_state.cfg_nome_extra2 = nome_extra2
-                st.success(f"'{titulo}' adicionado com sucesso!")
-                st.rerun()
-            else: 
-                st.error("Preencha os campos obrigatórios (Título e Classificação).")
-    
-    with col2:
-        st.subheader("Importar via CSV")
-        info_csv = f"O CSV deve conter: titulo, cdd, paginas, dimensao, ed, ex."
-        if usar_extra1: info_csv += f" Coluna extra: {nome_extra1.lower()}"
-        if usar_extra2: info_csv += f" Coluna extra: {nome_extra2.lower()}"
+        if st.button("💾 Tornar este Layout Padrão", type="primary"):
+            st.session_state.cfg_exibir_cdd = exibir_cdd
+            st.session_state.cfg_exibir_ed = exibir_ed
+            st.session_state.cfg_exibir_ex = exibir_ex
+            st.session_state.cfg_usar_extra1 = usar_extra1
+            st.session_state.cfg_nome_extra1 = nome_extra1
+            st.session_state.cfg_usar_extra2 = usar_extra2
+            st.session_state.cfg_nome_extra2 = nome_extra2
+            st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
+            st.success("Layout salvo como padrão!")
+            st.rerun()
+
+    # Se não foi salvo explicitamente, assume os valores dinâmicos da interface atual
+    if 'nova_ordem_escolhida' not in locals():
+        nova_ordem_escolhida = st.session_state.cfg_ordem_linhas
+
+    st.write("---")
+
+    # --- CRIAÇÃO DAS ABAS PARA ORGANIZAÇÃO VISUAL ---
+    aba_manual, aba_csv = st.tabs(["📝 Cadastro Manual", "📁 Importar via CSV"])
+
+    # ABA 1: CADASTRO MANUAL
+    with aba_manual:
+        col_form, col_preview = st.columns([1.2, 1])
+        
+        with col_form:
+            st.subheader("Dados do Livro")
+            titulo = st.text_input("Título *", key="manual_titulo")
+            classificacao = st.text_input("Classificação *", key="manual_cdd")
+            
+            c1, c2 = st.columns(2)
+            paginas = c1.number_input("Páginas", min_value=1, value=100, key="manual_pags")
+            dimensao = c2.text_input("Dimensão (ex: 23 cm)", key="manual_dim")
+            
+            c3, c4 = st.columns(2)
+            edicao = c3.text_input("Edição", value="1.ed.", key="manual_ed")
+            exemplar = c4.text_input("Exemplar", value="Ex.1", key="manual_ex")
+            
+            val_extra1 = ""
+            if st.session_state.cfg_usar_extra1:
+                val_extra1 = st.text_input(f"{st.session_state.cfg_nome_extra1}", key="manual_extra1")
+                
+            val_extra2 = ""
+            if st.session_state.cfg_usar_extra2:
+                val_extra2 = st.text_input(f"{st.session_state.cfg_nome_extra2}", key="manual_extra2")
+            
+            st.write(" ")
+            # Botão definitivo com trava anti-duplicação
+            if st.button("➕ Adicionar Livro à Lista", type="primary", use_container_width=True, key="btn_add_manual"):
+                if titulo.strip() and classificacao.strip():
+                    ajuste = (paginas / 2) * 0.1 + 2.0
+                    novo_livro = {
+                        "titulo": titulo.strip(), "cdd": classificacao.strip(), "paginas": str(paginas),
+                        "dimensao": dimensao.strip(), "ed": edicao.strip(), "ex": exemplar.strip(),
+                        "extra1": val_extra1.strip(), "extra2": val_extra2.strip(), "ajuste": min(ajuste, 50.0)
+                    }
+                    
+                    # Evita inserções idênticas em disparos seguidos do botão
+                    if not st.session_state.livros or st.session_state.livros[-1] != novo_livro:
+                        st.session_state.livros.append(novo_livro)
+                        
+                        # Atualiza o estado das etiquetas globalmente
+                        st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
+                        st.session_state.cfg_exibir_cdd = exibir_cdd
+                        st.session_state.cfg_exibir_ed = exibir_ed
+                        st.session_state.cfg_exibir_ex = exibir_ex
+                        st.session_state.cfg_usar_extra1 = usar_extra1
+                        st.session_state.cfg_nome_extra1 = nome_extra1
+                        st.session_state.cfg_usar_extra2 = usar_extra2
+                        st.session_state.cfg_nome_extra2 = nome_extra2
+                        
+                        st.toast(f"✅ '{titulo}' adicionado com sucesso!", icon="📖")
+                        st.rerun()
+                else: 
+                    st.error("Preencha os campos obrigatórios (Título e Classificação).")
+
+        with col_preview:
+            st.subheader("📋 Etiqueta em Tempo Real")
+            st.caption("Veja como a linha se comporta com os dados atuais digitados:")
+            
+            dados_reais_digitados = {
+                "Classificação": classificacao if classificacao else "---",
+                "Extra 1": val_extra1 if val_extra1 else "---",
+                "Edição": edicao if edicao else "---",
+                "Exemplar": exemplar if exemplar else "---",
+                "Extra 2": val_extra2 if val_extra2 else "---"
+            }
+            
+            html_preview_linhas = ""
+            for tag in nova_ordem_escolhida:
+                estilo_linha = "font-weight: bold; font-size: 15px;" if tag in ["Classificação", "Extra 1"] else "font-size: 13px;"
+                if (tag == "Classificação" and st.session_state.cfg_exibir_cdd) or \
+                   (tag == "Extra 1" and st.session_state.cfg_usar_extra1) or \
+                   (tag == "Edição" and st.session_state.cfg_exibir_ed) or \
+                   (tag == "Exemplar" and st.session_state.cfg_exibir_ex) or \
+                   (tag == "Extra 2" and st.session_state.cfg_usar_extra2):
+                    html_preview_linhas += f'<div style="{estilo_linha}">{dados_reais_digitados[tag]}</div>'
+                
+            st.markdown(f"""
+            <div style="display: flex; justify-content: center; background: #f0f2f6; padding: 25px; border-radius: 8px; border: 1px solid #dcdfe6; margin-top: 15px;">
+                <div style="width: 140px; min-height: 160px; background: white; color: black; border: 2px dashed #4B0082; font-family: 'Courier New', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 12px; box-shadow: 2px 4px 12px rgba(0,0,0,0.15); line-height: 1.4;">
+                    {html_preview_linhas}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # ABA 2: IMPORTAÇÃO VIA CSV
+    with aba_csv:
+        st.subheader("Importar em Lote")
+        info_csv = f"O arquivo CSV deve conter as colunas básicas: `titulo`, `cdd`, `paginas`, `dimensao`, `ed`, `ex`."
+        if st.session_state.cfg_usar_extra1: info_csv += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra1.lower()}`"
+        if st.session_state.cfg_usar_extra2: info_csv += f" Inclua também a coluna: `{st.session_state.cfg_nome_extra2.lower()}`"
         st.info(info_csv)
-        file = st.file_uploader("Subir arquivo CSV", type=["csv"])
+        
+        file = st.file_uploader("Subir arquivo CSV de livros", type=["csv"], key="uploader_csv")
         if file:
             df = pd.read_csv(file)
             df.columns = df.columns.str.lower()
+            contador_sucesso = 0
             for _, row in df.iterrows():
                 pags = str(row.get('paginas', '100'))
                 try: qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
                 except: qtd_pags = 100
                 ajuste = (qtd_pags / 2) * 0.1 + 2.0
                 st.session_state.livros.append({
-                    "titulo": str(row.get('titulo', 'Sem título')).strip(), "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
+                    "titulo": str(row.get('titulo', 'Sem título')).strip(), 
+                    "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
                     "paginas": str(qtd_pags), "dimensao": str(row.get('dimensao', '')).strip(),
-                    "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(), "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
-                    "extra1": str(row.get(nome_extra1.lower(), '')).strip(), "extra2": str(row.get(nome_extra2.lower(), '')).strip(),
+                    "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(), 
+                    "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
+                    "extra1": str(row.get(st.session_state.cfg_nome_extra1.lower(), '')).strip(), 
+                    "extra2": str(row.get(st.session_state.cfg_nome_extra2.lower(), '')).strip(),
                     "ajuste": min(ajuste, 50.0)
                 })
-            st.success("Dados importados com sucesso!")
+                contador_sucesso += 1
+            st.success(f"Sucesso! {contador_sucesso} livros importados e adicionados à lista.")
 
+    # BOTÃO GLOBAL DE TRANSIÇÃO DE TELA
+    st.write(" ")
     st.write("---")
-    if st.button("Ir para Estante de Calibragem ➡️", type="primary", use_container_width=True):
+    if st.button("Ir para Estante de Calibragem ➡️", type="primary", use_container_width=True, key="btn_ir_estante"):
         st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
         st.session_state.cfg_exibir_cdd = exibir_cdd
         st.session_state.cfg_exibir_ed = exibir_ed
@@ -234,7 +255,7 @@ elif st.session_state.tela == "calibragem":
                     st.session_state.mostrar_3d = True
                     st.rerun()
         
-        # --- ESTANTE DIGITAL INTOCÁVEL (Montagem estável em linha contínua) ---
+        # --- ESTANTE DIGITAL INTOCÁVEL (Montagem em linha estável) ---
         html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
         
         for i, livro in enumerate(st.session_state.livros):
