@@ -41,14 +41,14 @@ if st.session_state.tela == "entrada":
         st.success(st.session_state.mensagem_sucesso)
         st.session_state.mensagem_sucesso = ""
 
-    # --- ABAS DE INTERFACE TOTALMENTE SEPARADAS ---
+    # --- ABAS DE INTERFACE ---
     aba_manual, aba_lote, aba_config = st.tabs([
         "📝 Cadastro Manual", 
         "📁 Importar via CSV ou Planilha Excel", 
         "⚙️ Configurar Layout da Etiqueta"
     ])
 
-    # ABA 1: CADASTRO MANUAL (Foco e Velocidade)
+    # ABA 1: CADASTRO MANUAL
     with aba_manual:
         col_form, col_preview = st.columns([1.2, 1])
         
@@ -65,7 +65,6 @@ if st.session_state.tela == "entrada":
             edicao = c3.text_input("Edição", value="1.ed.", key="manual_ed")
             exemplar = c4.text_input("Exemplar", value="Ex.1", key="manual_ex")
             
-            # Blocos condicionais rápidos baseados no Layout Salvo
             val_extra1 = ""
             if st.session_state.cfg_usar_extra1:
                 val_extra1 = st.text_input(f"{st.session_state.cfg_nome_extra1}", key="manual_extra1")
@@ -103,9 +102,11 @@ if st.session_state.tela == "entrada":
                 "Extra 2": val_extra2 if val_extra2 else "---"
             }
             
-            html_preview_linhas = ""
+            # Título incluído fixo no topo da pré-visualização da etiqueta
+            html_preview_linhas = f'<div style="font-size: 11px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 4px; padding-bottom: 2px; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{titulo if titulo else "TÍTULO"}</div>'
+            
             for tag in st.session_state.cfg_ordem_linhas:
-                estilo_linha = "font-weight: bold; font-size: 15px;" if tag in ["Classificação", "Extra 1"] else "font-size: 13px;"
+                estilo_linha = "font-weight: bold; font-size: 14px;" if tag in ["Classificação", "Extra 1"] else "font-size: 12px;"
                 if (tag == "Classificação" and st.session_state.cfg_exibir_cdd) or \
                    (tag == "Extra 1" and st.session_state.cfg_usar_extra1) or \
                    (tag == "Edição" and st.session_state.cfg_exibir_ed) or \
@@ -115,7 +116,7 @@ if st.session_state.tela == "entrada":
                 
             st.markdown(f"""
             <div style="display: flex; justify-content: center; background: #f0f2f6; padding: 25px; border-radius: 8px; border: 1px solid #dcdfe6; margin-top: 15px;">
-                <div style="width: 140px; min-height: 160px; background: white; color: black; border: 2px dashed #4B0082; font-family: 'Courier New', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 12px; box-shadow: 2px 4px 12px rgba(0,0,0,0.15); line-height: 1.4;">
+                <div style="width: 140px; min-height: 160px; background: white; color: black; border: 2px dashed #4B0082; font-family: 'Courier New', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 12px; box-shadow: 2px 4px 12px rgba(0,0,0,0.15); line-height: 1.3;">
                     {html_preview_linhas}
                 </div>
             </div>
@@ -162,10 +163,9 @@ if st.session_state.tela == "entrada":
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}.")
 
-    # ABA 3: PAINEL DE CONFIGURAÇÕES ISOLADO (Evita lentidão no app)
+    # ABA 3: CONFIGURAÇÕES
     with aba_config:
         st.subheader("⚙️ Configurações Estruturais da Etiqueta")
-        st.caption("Altere os parâmetros globais e a ordem das linhas abaixo:")
         
         c_cfg1, c_cfg2 = st.columns(2)
         with c_cfg1:
@@ -215,19 +215,17 @@ if st.session_state.tela == "entrada":
             st.session_state.cfg_usar_extra2 = usar_extra2
             st.session_state.cfg_nome_extra2 = nome_extra2
             st.session_state.cfg_ordem_linhas = nova_ordem_escolhida
-            st.session_state.mensagem_sucesso = "Layout de etiqueta atualizado com sucesso para todo o acervo!"
+            st.session_state.mensagem_sucesso = "Layout de etiqueta atualizado com sucesso!"
             st.rerun()
 
-    # --- BARRA GLOBAL INFERIOR ---
     st.write("---")
     st.metric(label="Livros na Fila Atual", value=len(st.session_state.livros))
-    
     if st.button("Ir para Estante de Calibragem ➡️", type="primary", use_container_width=True):
         mudar_tela("calibragem")
         st.rerun()
 
 # ==========================================================
-# TELA 2: ESTANTE DE CALIBRAGEM (Intocada e Segura)
+# TELA 2: ESTANTE DE CALIBRAGEM
 # ==========================================================
 elif st.session_state.tela == "calibragem":
     st.title("📚 Estante de Calibragem")
@@ -240,18 +238,18 @@ elif st.session_state.tela == "calibragem":
     ordem_linhas_ativa = st.session_state.cfg_ordem_linhas
 
     if not st.session_state.livros:
-        st.warning("Nenhum livro cadastrado na estante virtual no momento.")
+        st.warning("Nenhum livro cadastrado na estante virtual.")
     else:
-        st.write("👉 **Toque no botão do livro para abrir a calibragem detalhada e opções:**")
+        st.write("👉 **Toque no livro para abrir detalhes e opções:**")
         cols_botoes = st.columns(len(st.session_state.livros))
         for i, livro in enumerate(st.session_state.livros):
             with cols_botoes[i]:
-                if st.button(f"👁️ {livro.get('titulo')[:12]}...", key=f"btn_{i}"):
+                if st.button(f"👁️ {livro.get('titulo')[:10]}...", key=f"btn_{i}"):
                     st.session_state.livro_ativo = i
                     st.session_state.mostrar_3d = True
                     st.rerun()
         
-        # --- ESTANTE DIGITAL CONTÍNUA ---
+        # --- ESTANTE DIGITAL COM TÍTULO NA ETIQUETA ---
         html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
         
         for i, livro in enumerate(st.session_state.livros):
@@ -259,18 +257,21 @@ elif st.session_state.tela == "calibragem":
             borda_selecao = "outline: 3px solid #4B0082;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
             t_tit = livro.get('titulo', 'Livro')
             
+            # Linha do título adicionada aqui no topo interno da etiqueta da estante
+            linhas_etiqueta = f'<div style="font-size: 8px; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 100%; padding-bottom: 1px;">{t_tit.upper()}</div>'
+            
             mapa_valores = {
-                "Classificação": f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 1px;">{livro.get("cdd", "")}</div>',
+                "Classificação": f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{livro.get("cdd", "")}</div>',
                 "Extra 1": f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1E3A8A; font-weight: bold;">{livro.get("extra1", "")}</div>' if livro.get("extra1") else "",
                 "Edição": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ed", "")}</div>',
                 "Exemplar": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{livro.get("ex", "")}</div>',
                 "Extra 2": f'<div style="font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #065F46;">{livro.get("extra2", "")}</div>' if livro.get("extra2") else ""
             }
             
-            linhas_etiqueta = "".join([mapa_valores[chave] for chave in ordem_linhas_ativa if chave in mapa_valores])
-            altura_etiqueta_estante = "68px" if len(ordem_linhas_ativa) > 3 else "55px"
+            linhas_etiqueta += "".join([mapa_valores[chave] for chave in ordem_linhas_ativa if chave in mapa_valores])
+            altura_etiqueta_estante = "78px" if len(ordem_linhas_ativa) > 3 else "65px"
 
-            html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 50px; line-height: 1.1;">{t_tit}</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #ccc; padding: 4px 0; text-align: center; box-sizing: border-box; line-height: 1.1; min-height: {altura_etiqueta_estante}; display: flex; flex-direction: column; justify-content: center;">{linhas_etiqueta}</div></div>'
+            html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 40px; line-height: 1.1;">{t_tit}</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #ccc; padding: 4px 2px; text-align: center; box-sizing: border-box; line-height: 1.1; min-height: {altura_etiqueta_estante}; display: flex; flex-direction: column; justify-content: center;">{linhas_etiqueta}</div></div>'
             
         html_estante += "</div>"
         st.markdown(html_estante, unsafe_allow_html=True)
@@ -278,7 +279,7 @@ elif st.session_state.tela == "calibragem":
         st.write(" ")
         st.write("---")
         
-        # INTERFACE INFERIOR DE DETALHES E REMOÇÃO
+        # INTERFACE INFERIOR (DETALHES E 3D)
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
             if idx >= len(st.session_state.livros):
@@ -318,6 +319,9 @@ elif st.session_state.tela == "calibragem":
                 cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
                 esp_3d = max(val_atual * 6, 60)
                 
+                # Linha do título incluída fixa no topo interno do renderizador 3D
+                linhas_3d = f'<div style="text-align: center; font-size: 9px; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 3px; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-bottom: 1px;">{livro_sel.get("titulo", "").upper()}</div>'
+                
                 mapa_3d = {
                     "Classificação": f'<div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%; word-wrap: break-word;">{livro_sel.get("cdd", "")}</div>',
                     "Extra 1": f'<div style="text-align: center; font-size: 10px; margin-top: 2px; font-weight: bold; color: #1E3A8A;">{livro_sel.get("extra1", "")}</div>' if livro_sel.get("extra1") else "",
@@ -325,8 +329,8 @@ elif st.session_state.tela == "calibragem":
                     "Exemplar": f'<div style="text-align: center; font-size: 10px;">{livro_sel.get("ex", "")}</div>',
                     "Extra 2": f'<div style="text-align: center; font-size: 10px; color: #065F46; font-weight: bold;">{livro_sel.get("extra2", "")}</div>' if livro_sel.get("extra2") else ""
                 }
-                linhas_3d = "".join([mapa_3d[chave] for chave in ordem_linhas_ativa if chave in mapa_3d])
-                altura_etiqueta_3d = "115px" if len(ordem_linhas_ativa) > 3 else "95px"
+                linhas_3d += "".join([mapa_3d[chave] for chave in ordem_linhas_ativa if chave in mapa_3d])
+                altura_etiqueta_3d = "125px" if len(ordem_linhas_ativa) > 3 else "105px"
 
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
