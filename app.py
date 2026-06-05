@@ -6,7 +6,7 @@ st.set_page_config(layout="wide", page_title="BiblioKhan Pro", page_icon="📚")
 
 # ==========================================================
 # INJEÇÃO DE INFORMAÇÕES VISUAIS PREMIUM (CSS)
-# Baseado na referência: Gemini_Generated_Image_gh06ejgh06ejgh06.png
+# Baseado na referência visual moderna de cards paralelos
 # ==========================================================
 st.markdown("""
     <style>
@@ -42,7 +42,7 @@ st.markdown("""
             border: 1px solid #cbd5e1 !important;
         }
         
-        /* Área customizada simulando o Drag & Drop da imagem */
+        /* Área customizada simulando o Drag & Drop moderno */
         .upload-dropzone {
             border: 2px dashed #3b82f6;
             background-color: #eff6ff;
@@ -84,15 +84,15 @@ def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
 
 # ==========================================================
-# TELA 1: ENTRADA DE DADOS (DASHBOARD PARALELO PREMIUM)
+# TELA 1: ENTRADA DE DADOS (PAINEL PARALELO PREMIUM)
 # ==========================================================
 if st.session_state.tela == "entrada":
     
-    # Barra de Navegação Superior Fictícia (Visual Simular Libel Smart)
+    # Barra de Navegação Superior Fictícia (Visual Profissional)
     st.markdown("""
         <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 24px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
             <div style="font-size: 20px; font-weight: bold; color: #1e3a8a; display: flex; align-items: center; gap: 8px;">
-                📘 BIBLIOKHAN SMART
+                📚 BIBLIOKHAN SMART
             </div>
             <div style="font-size: 14px; color: #64748b; font-weight: 500;">
                 Modo: Administrador do Acervo ⚙️
@@ -100,20 +100,20 @@ if st.session_state.tela == "entrada":
         </div>
     """, unsafe_allow_html=True)
     
-    st.subheader("Create & Calibrate Book Labels")
+    st.subheader("Gerenciar e Calibrar Etiquetas de Livros")
     
     if st.session_state.mensagem_sucesso:
         st.success(st.session_state.mensagem_sucesso)
         st.session_state.mensagem_sucesso = ""
 
-    # Distribuição em duas colunas mestras paralelas (Igual ao arquivo Gemini_Generated_Image_gh06ejgh06ejgh06.png)
+    # Distribuição em duas colunas mestras paralelas (Visual sem abas escondidas)
     col_esquerda, col_direita = st.columns([1.3, 1], gap="medium")
     
     # --- COLUNA ESQUERDA: CADASTRO MANUAL & CONFIGURAÇÕES ---
     with col_esquerda:
-        st.markdown('<div class="custom-card"><div class="card-title">📝 Manual Entry & Label Settings</div>', unsafe_allow_html=True)
+        st.markdown('<div class="custom-card"><div class="card-title">📝 Cadastro Manual e Propriedades</div>', unsafe_allow_html=True)
         
-        titulo = st.text_input("Book Title *", key="manual_titulo", placeholder="Ex: O Senhor dos Anéis")
+        titulo = st.text_input("Título do Livro *", key="manual_titulo", placeholder="Ex: O Senhor dos Anéis")
         classificacao = st.text_input("Classificação (CDD/CDU) *", key="manual_cdd", placeholder="Ex: 823.91")
         
         c1, c2 = st.columns(2)
@@ -133,9 +133,9 @@ if st.session_state.tela == "entrada":
             val_extra2 = st.text_input(f"{st.session_state.cfg_nome_extra2}", key="manual_extra2")
         
         # Sub-seção de Preview integrada dentro do próprio card esquerdo
-        st.markdown("<br><div style='font-weight: 600; font-size:14px; color:#475569;'>Live Label Preview:</div>", unsafe_allow_html=True)
+        st.markdown("<br><div style='font-weight: 600; font-size:14px; color:#475569;'>Pré-visualização da Etiqueta:</div>", unsafe_allow_html=True)
         dados_reais_digitados = {
-            "Classificação": classification if classificacao else "---",
+            "Classificação": classificacao if classificacao else "---",
             "Extra 1": val_extra1 if val_extra1 else "---",
             "Edição": edicao if edicao else "---",
             "Exemplar": exemplar if exemplar else "---",
@@ -143,7 +143,7 @@ if st.session_state.tela == "entrada":
         }
         
         tamanho_fonte_titulo = "11px" if len(titulo) < 20 else ("9px" if len(titulo) < 40 else "8px")
-        html_preview_linhas = f'<div style="font-size: {tamanho_fonte_titulo}; font-weight: bold; border-bottom: 1px solid #cbd5e1; margin-bottom: 4px; padding-bottom: 2px; width: 100%; word-wrap: break-word; line-height: 1.1;">{titulo.upper() if titulo else "BOOK TITLE"}</div>'
+        html_preview_linhas = f'<div style="font-size: {tamanho_fonte_titulo}; font-weight: bold; border-bottom: 1px solid #cbd5e1; margin-bottom: 4px; padding-bottom: 2px; width: 100%; word-wrap: break-word; line-height: 1.1;">{titulo.upper() if titulo else "TÍTULO DO LIVRO"}</div>'
         
         for tag in st.session_state.cfg_ordem_linhas:
             estilo_linha = "font-weight: bold; font-size: 13px;" if tag in ["Classificação", "Extra 1"] else "font-size: 11px;"
@@ -162,7 +162,7 @@ if st.session_state.tela == "entrada":
             </div>
         """, unsafe_allow_html=True)
 
-        if st.button("Create & Add Label", type="primary", use_container_width=True, key="btn_add_manual"):
+        if st.button("Criar e Adicionar Etiqueta", type="primary", use_container_width=True, key="btn_add_manual"):
             if titulo.strip() and classificacao.strip():
                 ajuste = (paginas / 2) * 0.1 + 2.0
                 novo_livro = {
@@ -179,22 +179,21 @@ if st.session_state.tela == "entrada":
                 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Configurações Rápidas de Linha no Rodapé do card esquerdo
-        with st.expander("⚙️ Advanced Layout Settings"):
+        # Configurações Avançadas de Layout
+        with st.expander("⚙️ Configurações Avançadas de Campos"):
             st.session_state.cfg_usar_extra1 = st.checkbox("Ativar Campo Extra 1 (Cutter)", value=st.session_state.cfg_usar_extra1)
             st.session_state.cfg_exibir_ed = st.checkbox("Exibir Linha de Edição", value=st.session_state.cfg_exibir_ed)
             st.session_state.cfg_exibir_ex = st.checkbox("Exibir Linha de Exemplar", value=st.session_state.cfg_exibir_ex)
 
     # --- COLUNA DIREITA: UPLOAD EM LOTE & RECENTES ---
     with col_direita:
-        st.markdown('<div class="custom-card"><div class="card-title">📥 Bulk Upload</div>', unsafe_allow_html=True)
+        st.markdown('<div class="custom-card"><div class="card-title">📥 Importação em Lote</div>', unsafe_allow_html=True)
         
-        # Simulador visual idêntico de zona de arrastar arquivo
         st.markdown("""
             <div class="upload-dropzone">
                 <span style="font-size: 24px;">☁️</span><br>
-                Drag & drop file or click to browse
-                <div style="font-size: 11px; color: #64748b; font-weight: normal; margin-top:4px;">Supported formats: CSV, XLSX. Maximum 10,000 records</div>
+                Arraste o arquivo aqui ou clique para procurar
+                <div style="font-size: 11px; color: #64748b; font-weight: normal; margin-top:4px;">Formatos suportados: CSV, XLSX. Máximo de 10.000 registros</div>
             </div>
         """, unsafe_allow_html=True)
         
@@ -230,11 +229,11 @@ if st.session_state.tela == "entrada":
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Painel de Status de Filas Recentes
-        st.markdown('<div class="custom-card"><div class="card-title">📋 Queue & Status</div>', unsafe_allow_html=True)
+        st.markdown('<div class="custom-card"><div class="card-title">📋 Fila de Processamento</div>', unsafe_allow_html=True)
         st.metric(label="Total de Livros na Fila Virtual", value=len(st.session_state.livros))
         
         st.write(" ")
-        if st.button("Process Queue & Generate Shelf View ➡️", type="primary", use_container_width=True):
+        if st.button("Processar Fila e Ver Estante Virtual ➡️", type="primary", use_container_width=True):
             mudar_tela("calibragem")
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -249,7 +248,7 @@ elif st.session_state.tela == "calibragem":
         </div>
     """, unsafe_allow_html=True)
     
-    if st.button("⬅️ Voltar para o Dashboard de Entrada"):
+    if st.button("⬅️ Voltar para a Tela de Entrada"):
         st.session_state.mostrar_3d = False
         mudar_tela("entrada")
         st.rerun()
@@ -270,10 +269,7 @@ elif st.session_state.tela == "calibragem":
                     st.session_state.mostrar_3d = True
                     st.rerun()
                     
-        # --- MOTOR DA ESTANTE DIGITAL (ESTRUTURA INTACTA) ---
-        html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f1f5f9; border-radius: 10px; overflow-x: auto; margin-top: 15px;'></div>"
-        
-        # Recriação idêntica do laço matemático que calcula a largura real do livro
+        # --- MOTOR DA ESTANTE DIGITAL ---
         html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 20px; min-height: 260px; background-color: #f1f5f9; border-radius: 10px; overflow-x: auto;'>"
         for i, livro in enumerate(st.session_state.livros):
             largura_lombada = max(livro.get('ajuste', 15.0) * 4, 85) 
@@ -298,7 +294,7 @@ elif st.session_state.tela == "calibragem":
         st.markdown(html_estante, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # INTERFACE INFERIOR DE DETALHES & MOTOR 3D PRESERVADO
+        # INTERFACE INFERIOR DE DETALHES & MOTOR 3D MANTIDO
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
             if idx >= len(st.session_state.livros):
@@ -310,21 +306,23 @@ elif st.session_state.tela == "calibragem":
             
             with col_ajustes:
                 st.markdown('<div class="custom-card"><div class="card-title">⚙️ Calibrador de Espessura</div>', unsafe_allow_html=True)
-                st.markdown(f"**Título:** {livro_sel.get('titulo')}")
+                st.markdown(f"**Livro em Foco:** {livro_sel.get('titulo')}")
                 
-                novo_val = st.slider("Ajuste Manual da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}")
+                novo_val = st.slider("Ajuste da Espessura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}")
                 st.session_state.livros[idx]['ajuste'] = novo_val
                 
-                if st.button("❌ Remover Livro", type="secondary", use_container_width=True):
+                if st.button("Remover Livro da Fila", type="secondary", use_container_width=True):
                     st.session_state.livros.pop(idx)
                     st.session_state.mostrar_3d = False
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
             
             with col_3d:
-                st.markdown('<div class="custom-card"><div class="card-title">🔍 Renderizador 3D Realtime</div>', unsafe_allow_html=True)
+                st.markdown('<div class="custom-card"><div class="card-title">🔍 Visualização Tridimensional (3D)</div>', unsafe_allow_html=True)
                 val_atual = st.session_state.livros[idx]['ajuste']
-                cor_borda = "#ef4444" if val_atual < 5.0 else "#22c55e"
+                
+                # Mudado para a cor azul padrão do sistema
+                cor_borda = "#3b82f6" 
                 esp_3d = max(val_atual * 6, 60)
                 
                 t_tit_sel = livro_sel.get("titulo", "")
@@ -341,7 +339,6 @@ elif st.session_state.tela == "calibragem":
                 linhas_3d += "".join([mapa_3d[chave] for chave in ordem_linhas_ativa if chave in mapa_3d])
                 altura_etiqueta_3d = "135px" if len(ordem_linhas_ativa) > 3 else "115px"
 
-                # Projeções matemáticas físicas originais mantidas
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; height: 300px; margin-top:10px;">
                     <div style="width: {esp_3d}px; height: 260px; background: #3b82f6; border: 4px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
@@ -354,3 +351,4 @@ elif st.session_state.tela == "calibragem":
                 """
                 st.markdown(html_renderizado, unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
+                 
