@@ -63,7 +63,7 @@ if st.session_state.tela == "entrada":
             for _, row in df.iterrows():
                 pags = str(row.get('paginas', '100'))
                 try:
-                    qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
+                    qtd_pags = int(float(pags)) if str(pags).replace('.','',1).isdigit() else 100
                 except:
                     qtd_pags = 100
                 ajuste = (qtd_pags / 2) * 0.1 + 2.0
@@ -102,7 +102,9 @@ elif st.session_state.tela == "calibragem":
         cols_botoes = st.columns(len(st.session_state.livros))
         for i, livro in enumerate(st.session_state.livros):
             with cols_botoes[i]:
-                if st.button(f"{livro.get('titulo')[:12]}...", key=f"btn_{i}"):
+                # Proteção adicionada aqui para evitar erro de tipo
+                titulo_seguro = str(livro.get("titulo") or "Sem título")
+                if st.button(f"{titulo_seguro[:12]}...", key=f"btn_{i}"):
                     st.session_state.livro_ativo = i
                     st.session_state.mostrar_3d = True
                     st.rerun()
@@ -113,7 +115,7 @@ elif st.session_state.tela == "calibragem":
             largura_lombada = max(livro.get('ajuste', 15.0) * 4, 80) 
             borda_selecao = "outline: 3px solid #4B0082;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
             
-            t_tit = livro.get('titulo', 'Livro')
+            t_tit = str(livro.get('titulo', 'Livro'))
             t_cdd = livro.get('cdd', '')
             t_ed = livro.get('ed', '')
             t_ex = livro.get('ex', '')
@@ -145,7 +147,7 @@ elif st.session_state.tela == "calibragem":
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
                     <div style="width: {esp_3d}px; height: 280px; background: #A084E8; border: 5px solid #22C55E; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
                         <div style="width: 100%; height: 120px; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 11px; color: black; border-top: 1px solid #ccc; padding: 2px; line-height: 1.1; overflow: hidden;">
-                            <div style="text-align: center; font-weight: bold; font-size: 10px; margin-bottom: 5px; border-bottom: 1px solid #999; width: 90%;">{livro_sel.get('titulo', '').upper()}</div>
+                            <div style="text-align: center; font-weight: bold; font-size: 10px; margin-bottom: 5px; border-bottom: 1px solid #999; width: 90%;">{str(livro_sel.get('titulo', '')).upper()}</div>
                             <div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%;">{livro_sel.get('cdd', '')}</div>
                             <div style="text-align: center; font-size: 10px; margin-top: 2px;">{livro_sel.get('ed', '')}</div>
                             <div style="text-align: center; font-size: 10px;">{livro_sel.get('ex', '')}</div>
