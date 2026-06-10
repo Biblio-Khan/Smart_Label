@@ -78,11 +78,18 @@ if st.session_state.tela == "entrada":
                 st.error("Por favor, preencha Título e Classificação.")
     
     with col2:
-        st.subheader("Importar via CSV")
-        st.info("O CSV deve conter: titulo, cdd, paginas, dimensao, ed, ex")
-        file = st.file_uploader("Subir arquivo CSV", type=["csv"])
+        st.subheader("Importar via CSV / Excel")
+        st.info("O arquivo deve conter as colunas: titulo, cdd, paginas, dimensao, ed, ex")
+        
+        # ATUALIZADO: Aceita tanto .csv quanto .xlsx
+        file = st.file_uploader("Subir arquivo (CSV ou Excel)", type=["csv", "xlsx"])
         if file:
-            df = pd.read_csv(file)
+            # ATUALIZADO: Identifica dinamicamente o tipo de arquivo para leitura
+            if file.name.endswith(".xlsx"):
+                df = pd.read_excel(file)
+            else:
+                df = pd.read_csv(file)
+                
             df.columns = df.columns.str.lower()
             for _, row in df.iterrows():
                 pags = str(row.get('paginas', '100'))
@@ -149,7 +156,7 @@ elif st.session_state.tela == "calibragem":
             
             html_linhas_etiqueta = ""
             for item in livro.get('campos', []):
-                if item["valor"]: # Só mostra se tiver conteúdo preenchido
+                if item["valor"] and str(item["valor"]).lower() != "nan": # Ignora nulos e vazios do Excel/CSV
                     html_linhas_etiqueta += f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px;">{item["valor"]}</div>'
             
             html_estante += (
@@ -190,7 +197,7 @@ elif st.session_state.tela == "calibragem":
                 
                 linhas_info = ""
                 for item in livro_sel.get('campos', []):
-                    if item['valor']:
+                    if item['valor'] and str(item['valor']).lower() != "nan":
                         linhas_info += f"* **{item['campo']}:** {item['valor']}\n"
                 
                 st.markdown(f"""
@@ -219,7 +226,7 @@ elif st.session_state.tela == "calibragem":
                 
                 html_etiqueta_3d = ""
                 for item in livro_sel.get('campos', []):
-                    if item["valor"]:
+                    if item["valor"] and str(item["valor"]).lower() != "nan":
                         html_etiqueta_3d += f'<div style="text-align: center; font-size: 10px; word-wrap: break-word; padding: 1px 0;">{item["valor"]}</div>'
                 
                 html_renderizado = f"""
@@ -233,5 +240,3 @@ elif st.session_state.tela == "calibragem":
                 </div>
                 """
                 st.markdown(html_renderizado, unsafe_allow_html=True)
-
-            
