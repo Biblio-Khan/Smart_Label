@@ -16,6 +16,11 @@ if "mostrar_3d" not in st.session_state:
 def mudar_tela(nova_tela):
     st.session_state.tela = nova_tela
 
+def calcular_lombada(paginas):
+    """Calcula a espessura da lombada e limita ao máximo de 50mm."""
+    ajuste = (paginas / 2) * 0.1 + 2.0
+    return min(ajuste, 50.0)
+
 # ==========================================================
 # TELA 1: ENTRADA DE DADOS
 # ==========================================================
@@ -39,7 +44,6 @@ if st.session_state.tela == "entrada":
             
             if st.form_submit_button("Adicionar à Lista"):
                 if titulo and classificacao:
-                    ajuste = (paginas / 2) * 0.1 + 2.0
                     st.session_state.livros.append({
                         "titulo": titulo.strip(), 
                         "cdd": classificacao.strip(), 
@@ -47,7 +51,7 @@ if st.session_state.tela == "entrada":
                         "dimensao": dimensao.strip(),
                         "ed": edicao.strip(),
                         "ex": exemplar.strip(),
-                        "ajuste": min(ajuste, 50.0)
+                        "ajuste": calcular_lombada(paginas)
                     })
                     st.success(f"'{titulo}' adicionado!")
                 else:
@@ -63,10 +67,10 @@ if st.session_state.tela == "entrada":
             for _, row in df.iterrows():
                 pags = str(row.get('paginas', '100'))
                 try:
-                    qtd_pags = int(float(pags)) if pags.replace('.','',1).isdigit() else 100
+                    qtd_pags = int(float(pags)) if pags.replace('.', '', 1).isdigit() else 100
                 except:
                     qtd_pags = 100
-                ajuste = (qtd_pags / 2) * 0.1 + 2.0
+                
                 st.session_state.livros.append({
                     "titulo": str(row.get('titulo', 'Sem título')).strip(), 
                     "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
@@ -74,7 +78,7 @@ if st.session_state.tela == "entrada":
                     "dimensao": str(row.get('dimensao', '')).strip(),
                     "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(),
                     "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
-                    "ajuste": min(ajuste, 50.0)
+                    "ajuste": calcular_lombada(qtd_pags)
                 })
             st.success("Dados importados com sucesso!")
 
@@ -108,8 +112,12 @@ elif st.session_state.tela == "calibragem":
                     st.session_state.mostrar_3d = True
                     st.rerun()
         
-        # --- ESTANTE DIGITAL COMPACTADA (Evita vazamento de código) ---
-        html_estante = "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; border-radius: 10px; overflow-x: auto;'>"
+        # --- ESTANTE DIGITAL COMPACTADA ---
+        html_estante = (
+            "<div style='display: flex; align-items: flex-end; border-bottom: 20px solid #5D4037; "
+            "padding: 20px; gap: 25px; min-height: 260px; background-color: #f9f9f9; "
+            "border-radius: 10px; overflow-x: auto;'>"
+        )
         
         for i, livro in enumerate(st.session_state.livros):
             largura_lombada = max(livro.get('ajuste', 15.0) * 4, 80) 
@@ -120,8 +128,23 @@ elif st.session_state.tela == "calibragem":
             t_ed = livro.get('ed', '')
             t_ex = livro.get('ex', '')
             
-            # Construção em string única e contínua sem quebras de linha para o HTML do tablet
-            html_estante += f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; color: white; box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} padding: 8px 2px 0 2px; box-sizing: border-box;"><div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; word-wrap: break-word; overflow: hidden; max-height: 50px; line-height: 1.1;">{t_tit}</div><div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; font-size: 10px; border-top: 1px solid #bbb; padding: 4px 0; text-align: center; box-sizing: border-box; line-height: 1.1;"><div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 1px;">{t_cdd}</div><div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{t_ed}</div><div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{t_ex}</div></div></div>'
+            html_estante += (
+                f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; '
+                f'background: #A084E8; border-radius: 3px; display: flex; flex-direction: column; '
+                f'justify-content: space-between; align-items: center; color: white; '
+                f'box-shadow: 4px 4px 8px rgba(0,0,0,0.2); position: relative; {borda_selecao} '
+                f'padding: 8px 2px 0 2px; box-sizing: border-box;">'
+                f'<div style="font-size: 10px; font-weight: bold; text-align: center; width: 100%; '
+                f'word-wrap: break-word; overflow: hidden; max-height: 50px; line-height: 1.1;">{t_tit}</div>'
+                f'<div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; '
+                f'font-size: 10px; border-top: 1px solid #bbb; padding: 4px 0; text-align: center; '
+                f'box-sizing: border-box; line-height: 1.1;">'
+                f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; '
+                f'text-overflow: ellipsis; padding: 0 1px;">{t_cdd}</div>'
+                f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{t_ed}</div>'
+                f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{t_ex}</div>'
+                f'</div></div>'
+            )
             
         html_estante += "</div>"
         st.markdown(html_estante, unsafe_allow_html=True)
@@ -151,8 +174,9 @@ elif st.session_state.tela == "calibragem":
                 * **Dimensão:** {dim_txt if dim_txt and dim_txt != 'nan' else 'Não informada'}
                 """)
                 
+                # CHAVE DINÂMICA (key): Garante que o slider mude de valor ao trocar de livro
                 novo_val = st.slider(
-                    "Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key="slider_lombada"
+                    "Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}"
                 )
                 st.session_state.livros[idx]['ajuste'] = novo_val
                 
