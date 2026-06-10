@@ -30,32 +30,52 @@ if st.session_state.tela == "entrada":
     
     with col1:
         st.subheader("Cadastro Manual")
-        with st.form("manual"):
-            titulo = st.text_input("Título *")
-            classificacao = st.text_input("Classificação *")
-            
-            c1, c2 = st.columns(2)
-            paginas = c1.number_input("Páginas", min_value=1, value=100)
-            dimensao = c2.text_input("Dimensão (ex: 23 cm)")
-            
-            c3, c4 = st.columns(2)
-            edicao = c3.text_input("Edição", value="1.ed.")
-            exemplar = c4.text_input("Exemplar", value="Ex.1")
-            
-            if st.form_submit_button("Adicionar à Lista"):
-                if titulo and classificacao:
-                    st.session_state.livros.append({
-                        "titulo": titulo.strip(), 
-                        "cdd": classificacao.strip(), 
-                        "paginas": str(paginas),
-                        "dimensao": dimensao.strip(),
-                        "ed": edicao.strip(),
-                        "ex": exemplar.strip(),
-                        "ajuste": calcular_lombada(paginas)
-                    })
-                    st.success(f"'{titulo}' adicionado!")
-                else:
-                    st.error("Por favor, preencha Título e Classificação.")
+        
+        # Campos Obrigatórios e Padrão
+        titulo = st.text_input("Título *")
+        classificacao = st.text_input("Classificação *")
+        
+        c1, c2 = st.columns(2)
+        paginas = c1.number_input("Páginas", min_value=1, value=100)
+        dimensao = c2.text_input("Dimensão (ex: 23 cm)")
+        
+        c3, c4 = st.columns(2)
+        edicao = c3.text_input("Edição", value="1.ed.")
+        exemplar = c4.text_input("Exemplar", value="Ex.1")
+        
+        # --- SEÇÃO DE CAMPOS EXTRAS (MÁXIMO 3) ---
+        st.write("---")
+        num_extras = st.number_input("Adicionar campos extras na etiqueta? (Máximo 3)", min_value=0, max_value=3, value=0)
+        
+        campos_extras = []
+        for i in range(num_extras):
+            col_nome, col_val = st.columns([1, 2])
+            with col_nome:
+                nome_campo = st.text_input(f"Nome do Campo Extra {i+1}", value=f"Extra {i+1}", key=f"lbl_ext_{i}")
+            with col_val:
+                valor_campo = st.text_input(f"Conteúdo do Campo Extra {i+1}", key=f"val_ext_{i}")
+            campos_extras.append({"campo": nome_campo, "valor": valor_campo})
+        
+        st.write(" ")
+        if st.button("Adicionar à Lista", type="primary"):
+            if titulo and classificacao:
+                # Junta os campos padrão com os extras que o usuário criou
+                campos_totais = [
+                    {"campo": "Classificação", "valor": classificacao.strip()},
+                    {"campo": "Edição", "valor": edicao.strip()},
+                    {"campo": "Exemplar", "valor": exemplar.strip()}
+                ] + campos_extras
+                
+                st.session_state.livros.append({
+                    "titulo": titulo.strip(), 
+                    "paginas": str(paginas),
+                    "dimensao": dimensao.strip(),
+                    "ajuste": calcular_lombada(paginas),
+                    "campos": campos_totais
+                })
+                st.success(f"'{titulo}' adicionado!")
+            else:
+                st.error("Por favor, preencha Título e Classificação.")
     
     with col2:
         st.subheader("Importar via CSV")
@@ -71,18 +91,22 @@ if st.session_state.tela == "entrada":
                 except:
                     qtd_pags = 100
                 
+                campos_csv = [
+                    {"campo": "Classificação", "valor": str(row.get('cdd', row.get('classificacao', ''))).strip()},
+                    {"campo": "Edição", "valor": str(row.get('ed', row.get('edicao', '1.ed.'))).strip()},
+                    {"campo": "Exemplar", "valor": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip()}
+                ]
+                
                 st.session_state.livros.append({
                     "titulo": str(row.get('titulo', 'Sem título')).strip(), 
-                    "cdd": str(row.get('cdd', row.get('classificacao', ''))).strip(), 
                     "paginas": str(qtd_pags),
                     "dimensao": str(row.get('dimensao', '')).strip(),
-                    "ed": str(row.get('ed', row.get('edicao', '1.ed.'))).strip(),
-                    "ex": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip(),
-                    "ajuste": calcular_lombada(qtd_pags)
+                    "ajuste": calcular_lombada(qtd_pags),
+                    "campos": campos_csv
                 })
             st.success("Dados importados com sucesso!")
 
-    if st.button("Ir para Estante de Calibragem ➡️", type="primary"):
+    if st.button("Ir para Estante de Calibragem ➡️", type="secondary"):
         mudar_tela("calibragem")
         st.rerun()
 
@@ -103,7 +127,6 @@ elif st.session_state.tela == "calibragem":
     else:
         st.write("👉 **Toque no botão do livro para abrir a calibragem detalhada:**")
         
-        # Botões nativos estáveis para seleção
         cols_botoes = st.columns(len(st.session_state.livros))
         for i, livro in enumerate(st.session_state.livros):
             with cols_botoes[i]:
@@ -122,11 +145,12 @@ elif st.session_state.tela == "calibragem":
         for i, livro in enumerate(st.session_state.livros):
             largura_lombada = max(livro.get('ajuste', 15.0) * 4, 80) 
             borda_selecao = "outline: 3px solid #4B0082;" if (st.session_state.mostrar_3d and st.session_state.livro_ativo == i) else ""
-            
             t_tit = livro.get('titulo', 'Livro')
-            t_cdd = livro.get('cdd', '')
-            t_ed = livro.get('ed', '')
-            t_ex = livro.get('ex', '')
+            
+            html_linhas_etiqueta = ""
+            for item in livro.get('campos', []):
+                if item["valor"]: # Só mostra se tiver conteúdo preenchido
+                    html_linhas_etiqueta += f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px;">{item["valor"]}</div>'
             
             html_estante += (
                 f'<div style="flex: 0 0 {largura_lombada}px; width: {largura_lombada}px; height: 210px; '
@@ -139,10 +163,7 @@ elif st.session_state.tela == "calibragem":
                 f'<div style="width: 100%; background: white; color: black; font-family: \'Courier New\', monospace; '
                 f'font-size: 10px; border-top: 1px solid #bbb; padding: 4px 0; text-align: center; '
                 f'box-sizing: border-box; line-height: 1.1;">'
-                f'<div style="font-weight: bold; font-size: 10px; overflow: hidden; white-space: nowrap; '
-                f'text-overflow: ellipsis; padding: 0 1px;">{t_cdd}</div>'
-                f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{t_ed}</div>'
-                f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{t_ex}</div>'
+                f'{html_linhas_etiqueta}'
                 f'</div></div>'
             )
             
@@ -167,14 +188,18 @@ elif st.session_state.tela == "calibragem":
                 pags_txt = livro_sel.get('paginas', 'Não informada')
                 dim_txt = livro_sel.get('dimensao', '')
                 
+                linhas_info = ""
+                for item in livro_sel.get('campos', []):
+                    if item['valor']:
+                        linhas_info += f"* **{item['campo']}:** {item['valor']}\n"
+                
                 st.markdown(f"""
                 **Informações Registradas:**
-                * **Classificação:** {livro_sel.get('cdd', 'Sem Classificação')}
                 * **Páginas:** {pags_txt} pág.
                 * **Dimensão:** {dim_txt if dim_txt and dim_txt != 'nan' else 'Não informada'}
+                {linhas_info}
                 """)
                 
-                # CHAVE DINÂMICA (key): Garante que o slider mude de valor ao trocar de livro
                 novo_val = st.slider(
                     "Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}"
                 )
@@ -192,19 +217,21 @@ elif st.session_state.tela == "calibragem":
                 cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
                 esp_3d = max(val_atual * 6, 60)
                 
+                html_etiqueta_3d = ""
+                for item in livro_sel.get('campos', []):
+                    if item["valor"]:
+                        html_etiqueta_3d += f'<div style="text-align: center; font-size: 10px; word-wrap: break-word; padding: 1px 0;">{item["valor"]}</div>'
+                
                 html_renderizado = f"""
                 <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
                     <div style="width: {esp_3d}px; height: 280px; background: #A084E8; border: 5px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
-                        <div style="width: 100%; height: 95px; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 11px; color: black; border-top: 1px solid #ccc; padding: 2px; line-height: 1.2; overflow: hidden;">
-                            <div style="text-align: center; font-weight: bold; font-size: 11px; width: 100%; word-wrap: break-word;">{livro_sel.get('cdd', '')}</div>
-                            <div style="text-align: center; font-size: 10px; margin-top: 3px;">{livro_sel.get('ed', '')}</div>
-                            <div style="text-align: center; font-size: 10px;">{livro_sel.get('ex', '')}</div>
+                        <div style="width: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 11px; color: black; border-top: 1px solid #ccc; padding: 6px 2px; line-height: 1.2; overflow: hidden;">
+                            {html_etiqueta_3d}
                         </div>
                     </div>
                     <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px; font-weight: bold;">CAPA</div>
                 </div>
                 """
                 st.markdown(html_renderizado, unsafe_allow_html=True)
-
 
             
