@@ -59,7 +59,6 @@ if st.session_state.tela == "entrada":
         st.write(" ")
         if st.button("Adicionar à Lista", type="primary"):
             if titulo and classificacao:
-                # Junta os campos padrão com os extras que o usuário criou
                 campos_totais = [
                     {"campo": "Classificação", "valor": classificacao.strip()},
                     {"campo": "Edição", "valor": edicao.strip()},
@@ -81,37 +80,45 @@ if st.session_state.tela == "entrada":
         st.subheader("Importar via CSV / Excel")
         st.info("O arquivo deve conter as colunas: titulo, cdd, paginas, dimensao, ed, ex")
         
-        # ATUALIZADO: Aceita tanto .csv quanto .xlsx
         file = st.file_uploader("Subir arquivo (CSV ou Excel)", type=["csv", "xlsx"])
         if file:
-            # ATUALIZADO: Identifica dinamicamente o tipo de arquivo para leitura
-            if file.name.endswith(".xlsx"):
-                df = pd.read_excel(file)
-            else:
-                df = pd.read_csv(file)
-                
-            df.columns = df.columns.str.lower()
-            for _, row in df.iterrows():
-                pags = str(row.get('paginas', '100'))
-                try:
-                    qtd_pags = int(float(pags)) if pags.replace('.', '', 1).isdigit() else 100
-                except:
-                    qtd_pags = 100
-                
-                campos_csv = [
-                    {"campo": "Classificação", "valor": str(row.get('cdd', row.get('classificacao', ''))).strip()},
-                    {"campo": "Edição", "valor": str(row.get('ed', row.get('edicao', '1.ed.'))).strip()},
-                    {"campo": "Exemplar", "valor": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip()}
-                ]
-                
-                st.session_state.livros.append({
-                    "titulo": str(row.get('titulo', 'Sem título')).strip(), 
-                    "paginas": str(qtd_pags),
-                    "dimensao": str(row.get('dimensao', '')).strip(),
-                    "ajuste": calcular_lombada(qtd_pags),
-                    "campos": campos_csv
-                })
-            st.success("Dados importados com sucesso!")
+            # SOLUÇÃO DA DUPLICAÇÃO: O arquivo só é processado quando o botão abaixo é clicado
+            if st.button("📥 Confirmar e Importar Livros", type="primary"):
+                if file.name.endswith(".xlsx"):
+                    df = pd.read_excel(file)
+                else:
+                    df = pd.read_csv(file)
+                    
+                df.columns = df.columns.str.lower()
+                for _, row in df.iterrows():
+                    pags = str(row.get('paginas', '100'))
+                    try:
+                        qtd_pags = int(float(pags)) if pags.replace('.', '', 1).isdigit() else 100
+                    except:
+                        qtd_pags = 100
+                    
+                    campos_csv = [
+                        {"campo": "Classificação", "valor": str(row.get('cdd', row.get('classificacao', ''))).strip()},
+                        {"campo": "Edição", "valor": str(row.get('ed', row.get('edicao', '1.ed.'))).strip()},
+                        {"campo": "Exemplar", "valor": str(row.get('ex', row.get('exemplar', 'Ex.1'))).strip()}
+                    ]
+                    
+                    st.session_state.livros.append({
+                        "titulo": str(row.get('titulo', 'Sem título')).strip(), 
+                        "paginas": str(qtd_pags),
+                        "dimensao": str(row.get('dimensao', '')).strip(),
+                        "ajuste": calcular_lombada(qtd_pags),
+                        "campos": campos_csv
+                    })
+                st.success(f"{len(df)} livros importados com sucesso!")
+
+        # Opção extra para limpar toda a estante de uma vez se quiser recomeçar
+        if st.session_state.livros:
+            st.write("---")
+            if st.button("🗑️ Limpar Toda a Estante", type="secondary"):
+                st.session_state.livros = []
+                st.session_state.mostrar_3d = False
+                st.rerun()
 
     if st.button("Ir para Estante de Calibragem ➡️", type="secondary"):
         mudar_tela("calibragem")
@@ -130,7 +137,7 @@ elif st.session_state.tela == "calibragem":
     st.write("---")
     
     if not st.session_state.livros:
-        st.warning("Nenhum livro cadastrado.")
+        st.warning("Nenhum livro cadastrado na estante.")
     else:
         st.write("👉 **Toque no botão do livro para abrir a calibragem detalhada:**")
         
@@ -156,7 +163,7 @@ elif st.session_state.tela == "calibragem":
             
             html_linhas_etiqueta = ""
             for item in livro.get('campos', []):
-                if item["valor"] and str(item["valor"]).lower() != "nan": # Ignora nulos e vazios do Excel/CSV
+                if item["valor"] and str(item["valor"]).lower() != "nan":
                     html_linhas_etiqueta += f'<div style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px;">{item["valor"]}</div>'
             
             html_estante += (
@@ -181,62 +188,76 @@ elif st.session_state.tela == "calibragem":
         st.write("---")
         
         # ==========================================================
-        # INTERFACE INFERIOR LADO A LADO
+        # INTERFACE INFERIOR LADO A LADO (CALIBRAGEM + 3D)
         # ==========================================================
         if st.session_state.mostrar_3d:
             idx = st.session_state.livro_ativo
-            livro_sel = st.session_state.livros[idx]
             
-            col_ajustes, col_3d = st.columns([1.2, 1])
-            
-            with col_ajustes:
-                st.subheader(f"⚙️ Ajustar Espessura: {livro_sel.get('titulo', 'Livro')}")
+            # Garante que o index ainda existe (caso o livro tenha sido removido)
+            if idx < len(st.session_state.livros):
+                livro_sel = st.session_state.livros[idx]
                 
-                pags_txt = livro_sel.get('paginas', 'Não informada')
-                dim_txt = livro_sel.get('dimensao', '')
+                col_ajustes, col_3d = st.columns([1.2, 1])
                 
-                linhas_info = ""
-                for item in livro_sel.get('campos', []):
-                    if item['valor'] and str(item['valor']).lower() != "nan":
-                        linhas_info += f"* **{item['campo']}:** {item['valor']}\n"
+                with col_ajustes:
+                    st.subheader(f"⚙️ Ajustar Espessura: {livro_sel.get('titulo', 'Livro')}")
+                    
+                    pags_txt = livro_sel.get('paginas', 'Não informada')
+                    dim_txt = livro_sel.get('dimensao', '')
+                    
+                    linhas_info = ""
+                    for item in livro_sel.get('campos', []):
+                        if item['valor'] and str(item['valor']).lower() != "nan":
+                            linhas_info += f"* **{item['campo']}:** {item['valor']}\n"
+                    
+                    st.markdown(f"""
+                    **Informações Registradas:**
+                    * **Páginas:** {pags_txt} pág.
+                    * **Dimensão:** {dim_txt if dim_txt and dim_txt != 'nan' else 'Não informada'}
+                    {linhas_info}
+                    """)
+                    
+                    novo_val = st.slider(
+                        "Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}"
+                    )
+                    st.session_state.livros[idx]['ajuste'] = novo_val
+                    
+                    if novo_val < 5.0:
+                        st.error("⚠️ ATENÇÃO: Lombada muito fina (abaixo de 5mm). Use etiqueta de capa!")
+                    else:
+                        st.success("✅ Espessura ideal para etiqueta de lombada.")
+                        
+                    # --- NOVO RECURSO: RETIRAR LIVRO DA ESTANTE ---
+                    st.write("---")
+                    if st.button("🗑️ Remover este Livro da Estante", type="secondary", key=f"del_{idx}"):
+                        st.session_state.livros.pop(idx)
+                        st.session_state.mostrar_3d = False
+                        st.success("Livro removido com sucesso!")
+                        st.rerun()
                 
-                st.markdown(f"""
-                **Informações Registradas:**
-                * **Páginas:** {pags_txt} pág.
-                * **Dimensão:** {dim_txt if dim_txt and dim_txt != 'nan' else 'Não informada'}
-                {linhas_info}
-                """)
-                
-                novo_val = st.slider(
-                    "Largura da Lombada (mm)", 1.0, 50.0, float(livro_sel.get('ajuste', 15.0)), 0.5, key=f"slider_lombada_{idx}"
-                )
-                st.session_state.livros[idx]['ajuste'] = novo_val
-                
-                if novo_val < 5.0:
-                    st.error("⚠️ ATENÇÃO: Lombada muito fina (abaixo de 5mm). Use etiqueta de capa!")
-                else:
-                    st.success("✅ Espessura ideal para etiqueta de lombada.")
-            
-            with col_3d:
-                st.subheader("🔍 Visualização Detalhada da Lombada")
-                
-                val_atual = st.session_state.livros[idx]['ajuste']
-                cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
-                esp_3d = max(val_atual * 6, 60)
-                
-                html_etiqueta_3d = ""
-                for item in livro_sel.get('campos', []):
-                    if item["valor"] and str(item["valor"]).lower() != "nan":
-                        html_etiqueta_3d += f'<div style="text-align: center; font-size: 10px; word-wrap: break-word; padding: 1px 0;">{item["valor"]}</div>'
-                
-                html_renderizado = f"""
-                <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
-                    <div style="width: {esp_3d}px; height: 280px; background: #A084E8; border: 5px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
-                        <div style="width: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 11px; color: black; border-top: 1px solid #ccc; padding: 6px 2px; line-height: 1.2; overflow: hidden;">
-                            {html_etiqueta_3d}
+                with col_3d:
+                    st.subheader("🔍 Visualização Detalhada da Lombada")
+                    
+                    val_atual = st.session_state.livros[idx]['ajuste']
+                    cor_borda = "#EF4444" if val_atual < 5.0 else "#22C55E"
+                    esp_3d = max(val_atual * 6, 60)
+                    
+                    html_etiqueta_3d = ""
+                    for item in livro_sel.get('campos', []):
+                        if item["valor"] and str(item["valor"]).lower() != "nan":
+                            html_etiqueta_3d += f'<div style="text-align: center; font-size: 10px; word-wrap: break-word; padding: 1px 0;">{item["valor"]}</div>'
+                    
+                    html_renderizado = f"""
+                    <div style="perspective: 1000px; display: flex; justify-content: center; margin-top: 20px; height: 320px;">
+                        <div style="width: {esp_3d}px; height: 280px; background: #A084E8; border: 5px solid {cor_borda}; transform: rotateY(-20deg); box-shadow: -10px 10px 20px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: flex-end; position: relative;">
+                            <div style="width: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Courier New', monospace; font-size: 11px; color: black; border-top: 1px solid #ccc; padding: 6px 2px; line-height: 1.2; overflow: hidden;">
+                                {html_etiqueta_3d}
+                            </div>
                         </div>
+                        <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px; font-weight: bold;">CAPA</div>
                     </div>
-                    <div style="width: 140px; height: 280px; background: #D1D5DB; transform-origin: left; transform: rotateY(30deg); box-shadow: 20px 10px 30px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: #4B5563; font-size: 12px; font-weight: bold;">CAPA</div>
-                </div>
-                """
-                st.markdown(html_renderizado, unsafe_allow_html=True)
+                    """
+                    st.markdown(html_renderizado, unsafe_allow_html=True)
+            else:
+                st.session_state.mostrar_3d = False
+                st.rerun()
